@@ -41,15 +41,6 @@ for col in tqdm_notebook(cols):
     train_set[col]=le.fit_transform(train_set[col])
     test_set[col]=le.fit_transform(test_set[col])
 
-# from sklearn.preprocessing import LabelEncoder
-# items=['']
-# encoder = LabelEncoder()
-# encoder = fit(items)
-# labels = encoder.transform(items)
-# print('인코딩 변환값:',labels)
-
-
-
 #print(train_set.columns)
 #print(train_set.info()) # 각 컬럼에 대한 디테일한 내용 출력 / null값(중간에 빠진 값) '결측치'
 #print(train_set.describe())
@@ -79,14 +70,14 @@ x_train, x_test, y_train, y_test = train_test_split(x, y,
 
 #2. 모델구성
 model = Sequential()
-model.add(Dense(100, input_dim=75))
+model.add(Dense(24, input_dim=75))
 model.add(Dense(100, activation='swish'))
 model.add(Dense(100, activation='swish'))
 model.add(Dense(1))
 
 #3. 컴파일, 훈련
 model.compile(loss='mae', optimizer='adam')
-history = model.fit(x_train, y_train, epochs=1000, validation_split=0.25, batch_size=100)
+history = model.fit(x_train, y_train, epochs=1000, validation_split=0.2, batch_size=100)
 
 #4. 평가 예측
 loss = model.evaluate(x_test, y_test)
@@ -120,4 +111,7 @@ plt.show()
 
 sample_submission['SalePrice'] = y_summit
 sample_submission = sample_submission.fillna(sample_submission.mean())
-sample_submission.to_csv(path + 'test03.csv', index=True)
+sample_submission.to_csv(path + 'test04.csv', index=True)
+
+# loss : 15640.0517578125
+# RMSE :  24100.263701740514
