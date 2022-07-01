@@ -1,3 +1,5 @@
+# 비교를 위한 validation 적용값
+
 import numpy as np
 import pandas as pd
 from tensorflow.python.keras.models import Sequential
@@ -64,16 +66,8 @@ model.add(Dense(100, activation='relu'))
 model.add(Dense(1, activation='linear'))
 
 #3. 컴파일, 훈련
-model.compile(loss='mae', optimizer='adam',
-              metrics=['accuracy'])
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
-                             restore_best_weights=True) 
-
-hist = model.fit(x_train, y_train, epochs=530, batch_size=22, 
-                 validation_split=0.2,
-                 callbacks=[earlyStopping],
-                 verbose=1)
+model.compile(loss='mae', optimizer='adam')
+model.fit(x_train, y_train, epochs=530, batch_size=22)
 
 #4. 평가 예측
 loss = model.evaluate(x_test, y_test)
@@ -114,10 +108,3 @@ print("RMSE : ", rmse)
 # 1/ validation 적용
 # loss : 26.81962013244629
 # RMSE :  33.2320737256767
-
-# 2/ EarlyStopping 및 activation 적용
-# loss : [20.08526039123535, 0.0]
-# RMSE :  26.914413185183808
-
-# 손실은 줄었으나 RMSE의 경우 감소한 것을 확인
-# 조금 더 정교한 데이터 수정이 필요할 것으로 생각됨

@@ -1,4 +1,4 @@
-# 기존 california housing 이용하여 valiation split / hist.shistory / matplotlib 적용
+# 기존 california housing 이용하여 early stopping 적용
 
 #sklearn.datasets.fetch_california_housing
 from sklearn.datasets import fetch_california_housing
@@ -29,7 +29,19 @@ model.add(Dense(1))
 
 #3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam')
-hist = model.fit(x_train, y_train, epochs=200, batch_size=20, validation_split=0.2)
+
+from tensorflow.python.keras.callbacks import EarlyStopping
+earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+# earlyStopping 보통 변수는 앞글자 소문자
+# 모니터 val_loss 대신 loss도 가능
+
+# start_time = time.time() # 현재 시간 출력
+hist = model.fit(x_train, y_train, epochs=200, batch_size=20, 
+                validation_split=0.2,
+                callbacks=[earlyStopping],
+                verbose=1)
+# end_time = time.time() - start_time # 걸린 시간
 
 #4. 평가, 예측
 loss = model.evaluate(x_test, y_test)
@@ -46,14 +58,21 @@ print('------------------------------')
 print(hist.history['val_loss']) #키밸류 상의 val_loss는 이름이기 때문에 ''를 넣어줌
 '''
 
+# print("걸린시간 : ", end_time)
+
+# 그래프 그리기 전에 r2
 y_predict = model.predict(x_test)
 
 from sklearn.metrics import r2_score
 r2 = r2_score(y_test, y_predict)
 print('r2 스코어 : ', r2)
 
-# loss :  0.6451882123947144
-# r2 스코어 :  0.5298043737289133
+# [patience=10 일때]
+# loss :  0.7213335037231445
+# r2 스코어 :  0.47431188835527194
+# [patience=100 일때]
+# loss :  0.6468518972396851
+# r2 스코어 :  0.5285920019123878
 
 
 # 이 값을 이용해 그래프를 그려보자!
