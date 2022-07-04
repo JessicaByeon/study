@@ -66,7 +66,7 @@ print('loss : ', loss)
 # print("걸린시간 : ", end_time)
 
 
-# 그래프 그리기 전에 r2
+# 그래프 그리기 전에 r2/acc
 y_predict = model.predict(x_test)
 y_predict[(y_predict<0.5)] = 0  
 y_predict[(y_predict>=0.5)] = 1 
