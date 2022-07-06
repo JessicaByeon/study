@@ -1,12 +1,11 @@
-# [실습]
-# datasets.describe()
-# datasets.info()
-# datasets.insull().sum()
+# 아래 모델에 대해 3가지 비교
 
-# pandas의 y라벨의 종류가 무엇인지 확인하는 함수 쓸 것
-# numpy에서는 np.unique(y, return_counts=True)
-# 결측치가 age에 많이 존재 -- 정보 데이터 확인 후 적합한 값으로 치환하여 적용할 것
+# 스케일링 하기 전
+# MinMaxScaler
+# StandardScaler
 
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
@@ -95,6 +94,18 @@ gender_submission = pd.read_csv(path + 'gender_submission.csv', #예측에서 �
 x_train, x_test, y_train, y_test = train_test_split(x,y, 
                                                     train_size=0.9, shuffle=True, random_state=68)
 
+# scaler = MinMaxScaler()
+# scaler = StandardScaler()
+# scaler = MaxAbsScaler()
+scaler = RobustScaler()
+scaler.fit(x_train)
+x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
+x_test = scaler.transform(x_test) 
+# print(np.min(x_train))
+# print(np.max(x_train))
+# print(np.min(x_test))
+# print(np.max(x_test))
+
 
 #2. 모델구성
 model = Sequential()
@@ -143,3 +154,25 @@ submission.to_csv(path + 'gender_submission_test01.csv', index=True)
 # train_size=0.9, epochs=500, batch_size=200, 
 # loss : [0.5329717993736267, 0.8111110925674438]
 # acc 스코어 :  0.8111111111111111 / score 0.72488
+
+
+
+#=============================================================================
+# loss : [0.5881829857826233, 0.800000011920929]
+# acc 스코어 :  0.8
+#=============================================================================
+# MinMaxScaler
+# loss : [0.6370605826377869, 0.7777777910232544]
+# acc 스코어 :  0.7777777777777778
+#=============================================================================
+# StandardScaler
+# loss : [1.040970802307129, 0.7888888716697693]
+# acc 스코어 :  0.7888888888888889
+#=============================================================================
+# MaxAbsScaler
+# loss : [0.6537775993347168, 0.8111110925674438]
+# acc 스코어 :  0.8111111111111111
+#=============================================================================
+# RobustScaler
+# loss : [1.067983865737915, 0.7555555701255798]
+# acc 스코어 :  0.7555555555555555

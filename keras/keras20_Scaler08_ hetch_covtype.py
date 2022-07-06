@@ -1,5 +1,11 @@
-# [과제] gpu와 cpu
+# 아래 모델에 대해 3가지 비교
 
+# 스케일링 하기 전
+# MinMaxScaler
+# StandardScaler
+
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import tensorflow as tf
 from sklearn.datasets import fetch_covtype
@@ -37,6 +43,18 @@ y = pd.get_dummies(y)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y,
         train_size=0.8, shuffle=True, random_state=68)
+
+# scaler = MinMaxScaler()
+# scaler = StandardScaler()
+# scaler = MaxAbsScaler()
+scaler = RobustScaler()
+scaler.fit(x_train)
+x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
+x_test = scaler.transform(x_test) 
+# # print(np.min(x_train))
+# # print(np.max(x_train))
+# # print(np.min(x_test))
+# print(np.max(x_test))
 
 #2. 모델구성
 model = Sequential()
@@ -109,3 +127,31 @@ print('acc 스코어 : ', acc)
 # tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)       
 # acc 스코어 :  0.7235957763568927
 '''
+
+
+
+#=============================================================================
+# loss :  1.019610047340393
+# accuracy :  0.5463628172874451
+# cpu 걸린시간 :  194.00481414794922
+# gpu 걸린시간 :  220.12128043174744
+#=============================================================================
+# MinMaxScaler
+# loss :  1.019610047340393
+# accuracy :  0.5463628172874451
+# cpu 걸린시간 :  202.63756585121155
+#=============================================================================
+# StandardScaler
+# loss :  1.019610047340393
+# accuracy :  0.5463628172874451
+# cpu 걸린시간 :  204.60881924629211
+#=============================================================================
+# MaxAbsScaler
+# loss :  0.2502190172672272
+# accuracy :  0.8973434567451477
+# cpu 걸린시간 :  205.43295907974243
+#=============================================================================
+# RobustScaler
+# loss :  0.19143211841583252
+# accuracy :  0.9241930246353149
+# cpu 걸린시간 :  206.75027465820312

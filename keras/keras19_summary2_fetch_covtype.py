@@ -1,4 +1,6 @@
-# [과제] gpu와 cpu
+# keras18_gpu_test3 파일의 summary를 확인해보시오.
+# summary and time!
+# epochs 10
 
 import numpy as np
 import tensorflow as tf
@@ -11,15 +13,6 @@ import pandas as pd
 import tensorflow as tf
 tf.random.set_seed(66)
 # 웨이트의 난수
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-print(gpus)
-if(gpus) :
-    print('쥐피유 돈다')
-    aaa = 'gpu'
-else:
-    print('쥐피유 안도라')
-    aaa = 'cpu'
 
 #1. 데이터
 datasets = fetch_covtype()
@@ -51,6 +44,36 @@ model.add(Dense(300, activation='relu'))
 model.add(Dense(400, activation='linear'))
 model.add(Dense(7, activation='sigmoid'))
 
+'''
+Model: "sequential"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+dense (Dense)                (None, 500)               27500
+_________________________________________________________________
+dense_1 (Dense)              (None, 400)               200400
+_________________________________________________________________
+dense_2 (Dense)              (None, 300)               120300
+_________________________________________________________________
+dense_3 (Dense)              (None, 300)               90300
+_________________________________________________________________
+dense_4 (Dense)              (None, 300)               90300
+_________________________________________________________________
+dense_5 (Dense)              (None, 300)               90300
+_________________________________________________________________
+dense_6 (Dense)              (None, 300)               90300
+_________________________________________________________________
+dense_7 (Dense)              (None, 300)               90300
+_________________________________________________________________
+dense_8 (Dense)              (None, 400)               120400
+_________________________________________________________________
+dense_9 (Dense)              (None, 7)                 2807
+=================================================================
+Total params: 922,907
+Trainable params: 922,907
+Non-trainable params: 0
+'''
+
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
@@ -61,7 +84,7 @@ earlyStopping = EarlyStopping(monitor='val_loss', patience=50, mode='min', verbo
 
 import time
 start_time = time.time() # 현재 시간 출력
-hist = model.fit(x_train, y_train, epochs=10, batch_size=100, 
+hist = model.fit(x_train, y_train, epochs=10, batch_size=500, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1)
@@ -77,13 +100,23 @@ print('loss : ', result[0])
 print('accuracy : ', result[1])
 
 end_time = time.time() - start_time # 걸린 시간
-print(aaa, '걸린시간 : ', end_time)
+print('걸린시간 : ', end_time)
+#======================================================================================
+model.summary()
+# 걸린시간 비교 batch_size=5000
+# cpu :  72.5228762626648 
+# gpu :  20.271857738494873
 
-# 걸린시간 비교
-# cpu 걸린시간 :  191.34082531929016
-# gpu 걸린시간 :  210.9643955230713
+# 걸린시간 비교 batch_size=1000
+# cpu :  99.73007893562317
+# gpu :  34.63421964645386
 
-'''
+# 걸린시간 비교 batch_size=500
+# cpu :  113.78163313865662
+# gpu :  54.99496412277222
+
+#======================================================================================
+
 # print("============= y_test[:5] ==============")
 # print(y_test[:5])
 # print("============= y_pred ==============")
@@ -108,4 +141,4 @@ print('acc 스코어 : ', acc)
 # tf.Tensor([1 1 0 ... 2 1 1], shape=(116203,), dtype=int64)
 # tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)       
 # acc 스코어 :  0.7235957763568927
-'''
+
