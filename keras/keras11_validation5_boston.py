@@ -39,7 +39,7 @@ model.add(Dense(1))
 
 #3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam')
-model.fit(x_train, y_train, epochs=200, batch_size=1, validation_split=0.25)
+model.fit(x_train, y_train, epochs=200, batch_size=1)
 
 #4. 평가, 예측
 loss = model.evaluate(x_test, y_test)
@@ -51,9 +51,8 @@ from sklearn.metrics import r2_score
 r2 = r2_score(y_test, y_predict) #y 대신 y_test
 print('r2 스코어 : ', r2)
 
-# loss :  20.824501037597656
-# r2 스코어 :  0.7508522391551226
-
+# loss :  22.443286895751953
+# r2 스코어 :  0.731484813588006
 
 
 #했을 때
@@ -82,7 +81,7 @@ from sklearn.metrics import r2_score
 r2 = r2_score(y_test, y_predict) #y 대신 y_test
 print('r2 스코어 : ', r2)
 
-# loss :  23.131698608398438
-# r2 스코어 :  0.7232485223337912
+# loss :  27.93036460876465
+# r2 스코어 :  0.6658364981018472
 
 # 비교결과 : validation split 사용 시 손실은 늘고, r2 스코어는 줄어듦
