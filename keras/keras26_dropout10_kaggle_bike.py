@@ -3,7 +3,7 @@ from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from tensorflow.python.keras.models import Sequential, Model, load_model
-from tensorflow.python.keras.layers import Dense, Input
+from tensorflow.python.keras.layers import Dense, Input, Dropout
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score,mean_squared_error
 from csv import reader
@@ -81,11 +81,17 @@ x_test = scaler.transform(x_test)
 #2. 모델구성
 model=Sequential()
 model.add(Dense(32,input_dim=15))
+model.add(Dropout(0.3)) # 30% 만큼 제외
 model.add(Dense(60,activation='ReLU'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(100,activation='ReLU'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(50,activation='ReLU'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(30,activation='ReLU'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(10,activation='ReLU'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(1))
 
 # input1 = Input(shape=(15,)) # 먼저 input layer를 명시해줌
@@ -124,7 +130,7 @@ mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋�
 
 hist = model.fit(x_train, y_train, epochs=100, batch_size=100, 
                 validation_split=0.2,
-                callbacks=[earlyStopping, mcp],
+                callbacks=[earlyStopping],
                 verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
 
 
@@ -145,6 +151,12 @@ print("RMSE",rmse)
 r2 = r2_score(y_test, y_predict)
 print("R2 : ", r2)
 
+
 # loss: [4543.44775390625, 0.0]
 # RMSE 67.40510079044358
 # R2 :  0.7944606959926506
+
+# dropout 사용 결과값
+# loss: [4740.1865234375, 0.0]
+# RMSE 68.84901377448787
+# R2 :  0.7855604911084013

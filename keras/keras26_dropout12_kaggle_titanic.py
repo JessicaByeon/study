@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.models import Sequential, Model, load_model
-from tensorflow.python.keras.layers import Dense, Input
+from tensorflow.python.keras.layers import Dense, Input, Dropout
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.callbacks import EarlyStopping
 from sklearn.metrics import accuracy_score
@@ -104,8 +104,11 @@ x_test = scaler.transform(x_test)
 #2. 모델구성
 model = Sequential()
 model.add(Dense(100, activation='linear', input_dim=9))
+model.add(Dropout(0.3)) # 30% 만큼 제외
 model.add(Dense(100, activation='relu'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(100, activation='relu'))
+model.add(Dropout(0.2)) # 20% 만큼 제외
 model.add(Dense(1, activation='sigmoid'))
 
 # input1 = Input(shape=(9,)) # 먼저 input layer를 명시해줌
@@ -141,7 +144,7 @@ mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋�
 
 hist = model.fit(x_train, y_train, epochs=250, batch_size=200, 
                 validation_split=0.2,
-                callbacks=[earlyStopping, mcp],
+                callbacks=[earlyStopping],
                 verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
 
 
@@ -160,3 +163,7 @@ print('acc 스코어 : ', acc)
 
 # loss : [0.46116819977760315, 0.7444444298744202]
 # acc 스코어 :  0.7444444444444445
+
+# dropout 사용 결과값
+# loss : [0.456948846578598, 0.7888888716697693]
+# acc 스코어 :  0.7888888888888889
