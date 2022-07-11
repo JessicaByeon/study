@@ -22,7 +22,7 @@ model = Sequential()
 # model.add(Conv2D(7, (2,2), activation='relu')) # filter = 7, kernel size = (2,2) # 출력 : (N, 3, 3, 7)
 
 # model.add(Flatten()) # (N, 63) 3*3*7
-# model.add(Dense(32, activation='relu'))
+# model.add(Dense(32, activation='relu')) # flatten이 없을경우, (N, 3, 3, 32) 로 출력
 # model.add(Dense(32, activation='relu'))
 # model.add(Dense(10, activation='softmax'))
 # model.summary()
