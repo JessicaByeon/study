@@ -80,3 +80,5 @@ hist = model.fit(x_train, y_train, epochs=100, batch_size=20,
 #4. 평가, 예측
 loss = model.evaluate(x_test, y_test)
 print('loss : ', loss)
+
+# loss :  [0.43741923570632935, 0.0033909252379089594]

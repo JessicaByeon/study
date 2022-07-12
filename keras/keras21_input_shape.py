@@ -12,7 +12,7 @@ print(x.shape, y.shape) #(3,10) (10,)
 x = x.T
 # x = x.transpose() 해당 2가지 방법은 행과 열을 바꿔주지만
 # x = x.reshape(10,3) reshape는 순서를 그대로 유지해줌
-print(x.shape) # (10.3)
+print(x.shape) # (10,3)
 
 #2. 모델구성
 model = Sequential()

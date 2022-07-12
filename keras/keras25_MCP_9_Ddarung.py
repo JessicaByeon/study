@@ -121,3 +121,7 @@ print("RMSE : ", rmse)
 
 r2 = r2_score(y_test, y_predict)
 print("R2 : ", r2)
+
+# loss : [24.83771324157715, 0.0]
+# RMSE :  31.007347425685435
+# R2 :  0.7224792311036958

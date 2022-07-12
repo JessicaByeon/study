@@ -112,5 +112,8 @@ from sklearn.metrics import r2_score, accuracy_score
 # # r2 스코어 :  0.5852116219896948
 
 acc = accuracy_score(y_test, y_predict)
-print('acc 스코어 : ', acc) #acc 스코어 :  0.8947368421052632
+print('acc 스코어 : ', acc)
 print(y_predict)
+
+# loss :  [0.04178836569190025, 0.9824561476707458]
+# acc 스코어 :  0.9824561403508771

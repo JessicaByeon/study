@@ -117,3 +117,8 @@ print(y_test)
 acc = accuracy_score(y_test, y_predict)
 print('acc 스코어 : ', acc)
 
+# loss :  0.19143211841583252
+# accuracy :  0.9241930246353149
+# tf.Tensor([1 0 1 ... 5 1 1], shape=(116203,), dtype=int64)
+# tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)
+# acc 스코어 :  0.9238315706134953

@@ -112,3 +112,6 @@ print(y_test)
 
 acc = accuracy_score(y_test, y_predict)
 print('acc 스코어 : ', acc)
+
+# loss :  0.057559411972761154
+# accuracy :  0.9722222089767456
