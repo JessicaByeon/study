@@ -9,6 +9,9 @@ from tensorflow.python.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D,
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, MaxAbsScaler, RobustScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
+
 
 #1. 데이터
 path = './_data/dacon_shopping/' # 경로 = .현재폴더 /하단
@@ -78,7 +81,7 @@ print(train_set.isnull().sum()) # 각 컬럼당 null의 갯수 확인가능
 # # 예측값인 Weekly_Sales를 확인
 # plt.hist(train_set.Weekly_Sales, bins=50)
 # plt.show()
-# 매출이 0.2~2.2 사이(초반구간)에 밀집된 것을 확인
+# # 매출이 0.2~2.2 사이(초반구간)에 밀집된 것을 확인
 
 # train_set = train_set.fillna(train_set.mean()) # nan 값을 평균값으로 채움
 # # print(train_set.isnull().sum())
@@ -90,6 +93,23 @@ train_set = train_set.fillna(0) # nan 값을 0으로 채움
 # print(train_set.shape) # (6255, 11) 데이터가 모두 채워진 것을 확인 가능
 test_set = test_set.fillna(0)
 
+train_set['Date'] = pd.to_datetime(train_set['Date'])
+train_set['year'] = train_set['Date'].dt.year
+train_set['month'] = train_set['Date'].dt.month
+train_set['day'] = train_set['Date'].dt.day
+#print(train_set) #확인.
+
+test_set['Date'] = pd.to_datetime(test_set['Date'])
+test_set['year'] = test_set['Date'].dt.year
+test_set['month'] = test_set['Date'].dt.month
+test_set['hour'] = test_set['Date'].dt.day
+#print(test_set) #확인.
+
+
+train_set = train_set.drop(columns=['Date'])
+test_set = test_set.drop(columns=['Date'])
+
+'''
 # 날짜에 해당하는 문자를 숫자(월)로 추출
 # Date 칼럼에서 "월"에 해당하는 정보만 추출 -> 숫자 형태로 반환하는 함수 작성
 def get_month(date):
@@ -101,19 +121,21 @@ def get_month(date):
 train_set['Month'] = train_set['Date'].apply(get_month)
 print(train_set) # 월만 추출된 상태
 test_set['Month'] = test_set['Date'].apply(get_month) # test_set 에도 적용
+'''
 
+# boolean 0 or 1로 변환
+train_set["IsHoliday"] = train_set["IsHoliday"].astype(int)
+test_set["IsHoliday"] = test_set["IsHoliday"].astype(int)
 
 # # 분석할 의미가 없는 칼럼 제거
 # train = train.drop(columns=['id'])
 # test = test.drop(columns=['id'])
 
 # 전처리 하기 전 칼럼 제거
-x = train_set = train_set.drop(columns=['Date','IsHoliday'])
-y = test_set = test_set.drop(columns=['Date','IsHoliday'])
+train_set = train_set.drop(columns=['IsHoliday'])
+test_set = test_set.drop(columns=['IsHoliday'])
 
 # x = train_set.drop(['Date', 'IsHoliday'], axis=1) # axis는 'count'가 컬럼이라는 것을 명시하기 위해
-
-x = train_set.drop(columns=['Weekly_Sales'])
 print(train_set)
 print(train_set.columns)
 print(train_set.shape) # (6255, 11)
@@ -121,9 +143,13 @@ print(train_set.shape) # (6255, 11)
 # 'Promotion2', 'Promotion3', 'Promotion4', 'Promotion5', 'Unemployment', 'Weekly_Sales', 'Month'], dtype='object')
 
 # 학습에 사용할 정보와 예측하고자 하는 정보를 분리
-y = train_set[['Weekly_Sales']]
-print(train_set)
+x = train_set.drop(columns=['Weekly_Sales'])
+print(x.shape) # (6255, 10)
 
+y = train_set[['Weekly_Sales']]
+
+# y = train_set['count']
+print(y)
 print(y.shape) # (6255, 1)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y,
@@ -141,9 +167,11 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+
 #2. 모델구성
+
 model = Sequential()
-model.add(Dense(100, input_dim=10))
+model.add(Dense(100, input_dim=12))
 model.add(Dropout(0.3))
 model.add(Dense(100, activation='relu'))
 model.add(Dropout(0.2))
@@ -202,22 +230,28 @@ submission['Weekly_Sales'] = y_summit
 submission.to_csv(path + 'test01.csv', index=True)
 
 
-# MinMaxScaler --- 평균적으로 가장 결과값이 좋은 상태
+# MinMaxScaler random_state 68--- 평균적으로 가장 결과값이 좋은 상태
 # loss : 394664.25
 # RMSE :  501303.8461835106
 # r2 스코어 :  0.1851752432148115
 
-# StandardScaler
+# StandardScaler random_state 68
 # loss : [401021.4375, 250133397504.0]
 # RMSE :  500133.34311958484
 # r2 스코어 :  0.17982951092451094
 
-# MaxAbsScaler
+# MaxAbsScaler random_state 68
 # loss : [405057.8125, 247482155008.0]
 # RMSE :  497475.76673653687
 # r2 스코어 :  0.18852269112536457
 
-# RobustScaler
+# RobustScaler random_state 68
 # loss : [423380.8125, 292641701888.0]
 # RMSE :  540963.6680906413
 # r2 스코어 :  0.04044755442941761
+
+# ===========================================
+# 모델링 수정 후
+# MinMaxScaler random_state 100
+# RMSE :  498139.23646465497
+# r2 스코어 :  0.2280599623524645

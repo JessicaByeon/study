@@ -1,7 +1,7 @@
 # 흑백, 채널값 1
 
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Dropout # 이미지 작업은 2D
+from tensorflow.python.keras.models import Sequential, Model
+from tensorflow.python.keras.layers import Dense, Input, Conv2D, Flatten, MaxPooling2D, Dropout # 이미지 작업은 2D
 from keras.datasets import mnist, fashion_mnist
 import numpy as np
 import pandas as pd
@@ -39,24 +39,36 @@ y_test = to_categorical(y_test)
 
 
 #2. 모델구성
-model = Sequential()
-model.add(Conv2D(filters=64, kernel_size=(3,3), # 64 다음 레이어로 전달해주는 아웃풋 노드의 갯수, kernel size 이미지를 자르는 규격
-                 padding='same', # 원래 shape를 그대로 유지하여 다음 레이어로 보내주고 싶을 때 주로 사용!
-                 input_shape=(28, 28, 1))) # (batch_size, rows, columns, channels)   # 출력 : (N, 28, 28, 64)
-model.add(MaxPooling2D()) # (N, 14, 14, 64)
-model.add(Conv2D(32, (2,2), 
-                 padding='valid', # 디폴트
-                 activation='relu')) # filter = 32, kernel size = (2,2) # 출력 : (N, 13, 13, 32)
-model.add(Conv2D(32, (2,2), 
-                 padding='valid', # 디폴트
-                 activation='relu')) # filter = 32, kernel size = (2,2) # 출력 : (N, 12, 12, 32)
-model.add(Flatten()) # (N, 4608) 12*12*32
-model.add(Dense(100, activation='relu'))
-# model.add(Dropout(0.2))
-model.add(Dense(100, activation='relu'))
-# model.add(Dropout(0.2))
-model.add(Dense(10, activation='softmax'))
-# model.summary()
+# model = Sequential()
+# model.add(Conv2D(filters=64, kernel_size=(3,3), # 64 다음 레이어로 전달해주는 아웃풋 노드의 갯수, kernel size 이미지를 자르는 규격
+#                  padding='same', # 원래 shape를 그대로 유지하여 다음 레이어로 보내주고 싶을 때 주로 사용!
+#                  input_shape=(28, 28, 1))) # (batch_size, rows, columns, channels)   # 출력 : (N, 28, 28, 64)
+# model.add(MaxPooling2D()) # (N, 14, 14, 64)
+# model.add(Conv2D(32, (2,2), 
+#                  padding='valid', # 디폴트
+#                  activation='relu')) # filter = 32, kernel size = (2,2) # 출력 : (N, 13, 13, 32)
+# model.add(Conv2D(32, (2,2), 
+#                  padding='valid', # 디폴트
+#                  activation='relu')) # filter = 32, kernel size = (2,2) # 출력 : (N, 12, 12, 32)
+# model.add(Flatten()) # (N, 4608) 12*12*32
+# model.add(Dense(100, activation='relu'))
+# # model.add(Dropout(0.2))
+# model.add(Dense(100, activation='relu'))
+# # model.add(Dropout(0.2))
+# model.add(Dense(10, activation='softmax'))
+# # model.summary()
+
+# 함수형 모델
+input1 = Input(shape=(32,32,3))
+conv2d1 = Conv2D(kernel_size=(3,3), filters=64, activation='relu')(input1)
+maxp2d1 = MaxPooling2D(())(conv2d1)
+conv2d2 = Conv2D(kernel_size=(2,2), filters=32, activation='relu')(maxp2d1)
+conv2d3 = Conv2D(kernel_size=(2,2), filters=32, activation='relu')(conv2d2)
+flatten = Flatten()(conv2d3)
+dense1 = Dense(100, activation='relu')(flatten)
+dense2 = Dense(100, activation='relu')(dense1)
+output1 = Dense(10, activation='softmax')(dense2)
+model = Model(inputs=input1, outputs=output1)
 
 
 #3. 컴파일, 훈련
