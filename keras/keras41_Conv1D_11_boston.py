@@ -1,8 +1,4 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
+# 기존 DNN 모델과 Conv1D 사용 시 성능비교 (11번~22번)
 
 from sklearn.datasets import load_boston
 from sklearn.model_selection import train_test_split
@@ -11,7 +7,7 @@ from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 from sqlalchemy import false
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, Dropout
 
 datasets = load_boston()
 x = datasets.data
@@ -46,6 +42,25 @@ model.add(Dense(9))
 model.add(Dense(10))
 model.add(Dense(10))
 model.add(Dense(1))
+
+
+model = Sequential()
+model.add(Conv1D(filters=64, kernel_size=(3,3), # 64 다음 레이어로 전달해주는 아웃풋 노드의 갯수, kernel size 이미지를 자르는 규격
+                 padding='same', # 원래 shape를 그대로 유지하여 다음 레이어로 보내주고 싶을 때 주로 사용!
+                 input_shape=(13, 1, 1))) # (batch_size, rows, columns, channels) / 출력 (N, 13, 1, 64)
+model.add(Conv1D(32, (2,2), 
+                 padding='same',
+                 activation='relu')) # filter = 32, kernel size = (2,2) / 출력 (N, 13, 1, 32)
+model.add(Flatten()) # (N, 416)
+model.add(Dense(32, activation='relu'))
+# model.add(Dropout(0.3)) # 30% 만큼 제외
+model.add(Dense(32, activation='relu'))
+# model.add(Dropout(0.2)) # 20% 만큼 제외
+model.add(Dense(16, activation='relu'))
+model.add(Dense(1))
+model.summary()
+
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam')

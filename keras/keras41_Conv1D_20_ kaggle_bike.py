@@ -9,7 +9,7 @@ from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Conv1D, Flatten
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score,mean_squared_error
 from csv import reader

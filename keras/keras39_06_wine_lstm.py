@@ -1,16 +1,10 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, LSTM
 
 import tensorflow as tf
 tf.random.set_seed(66)
@@ -46,23 +40,32 @@ x_test = scaler.transform(x_test)
 # print(np.max(x_test))
 
 
+print(x_train.shape, x_test.shape) # (142, 13) (36, 13)
+print(y_train.shape, y_test.shape) # (142, 3) (36, 3)
+x_train = x_train.reshape(142, 13, 1)
+x_test = x_test.reshape(36, 13, 1)
+print(x_train.shape, x_test.shape) # 
+
+
 #2. 모델구성
 model = Sequential()
-model.add(Dense(5, activation='linear', input_dim=13))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='linear'))
+model.add(LSTM(64, input_shape=(13,1), activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
 model.add(Dense(3, activation='softmax'))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
 from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1, 
+earlyStopping = EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
                               restore_best_weights=True)
 
-hist = model.fit(x_train, y_train, epochs=1000, batch_size=32, 
+hist = model.fit(x_train, y_train, epochs=100, batch_size=100, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1)
@@ -93,6 +96,23 @@ print(y_test)
 
 acc = accuracy_score(y_test, y_predict)
 print('acc 스코어 : ', acc)
+
+# LSTM
+# loss :  1.0750164985656738
+# accuracy :  0.7777777910232544
+# ============= y_pred ==============
+# [0 1 0 0 1 1 1 0 0 1 1 0 0 0 1 0 2 0 1 0 0 0 2 1 0 1 0 1 1 
+# 2 1 0 2 0 2 1]
+# [1 1 0 0 1 1 1 0 0 2 2 0 0 0 1 0 2 0 1 1 0 1 2 1 0 1 1 1 1 
+# 2 2 0 2 1 2 1]
+# acc 스코어 :  0.7777777777777778
+
+
+
+
+
+
+
 
 # epochs=500, batch_size=20,
 # loss :  0.15111111104488373

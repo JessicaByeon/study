@@ -1,15 +1,9 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, LSTM
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score,mean_squared_error
 from csv import reader
@@ -91,24 +85,30 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape, x_test.shape) # (10777, 15) (109, 15)
+print(y_train.shape, y_test.shape) # (10777,) (109,)
+x_train = x_train.reshape(10777, 15, 1)
+x_test = x_test.reshape(109, 15, 1)
+print(x_train.shape, x_test.shape) # (10777, 15, 1) (109, 15, 1)
+
 
 #2. 모델구성
-model=Sequential()
-model.add(Dense(32,input_dim=15))
-model.add(Dense(60,activation='ReLU'))
-model.add(Dense(100,activation='ReLU'))
-model.add(Dense(50,activation='ReLU'))
-model.add(Dense(30,activation='ReLU'))
-model.add(Dense(10,activation='ReLU'))
+model = Sequential()
+model.add(LSTM(64, input_shape=(15,1), activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
 model.add(Dense(1))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam',
               metrics=['accuracy'])
 from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+earlyStopping = EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
                               restore_best_weights=True) 
-hist = model.fit(x_train, y_train, epochs=500, batch_size=100, 
+hist = model.fit(x_train, y_train, epochs=500, batch_size=1000, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1)
@@ -139,6 +139,14 @@ print("R2 : ", r2)
 # result['count']=y_summit
 # result=abs(result)
 # result.to_csv(path+'sampleSubmission.csv',index=True)
+
+# LSTM
+# loss: [8802.24609375, 0.0]
+# RMSE 93.82028438123247
+# R2 :  0.6017985411586145
+
+
+
 
 # loss: 2941.988525390625
 # RMSE 54.24010049650571
@@ -182,3 +190,4 @@ print("R2 : ", r2)
 # loss: [5368.74365234375, 0.0]
 # RMSE 73.27171552764139
 # R2 :  0.7571254122056776
+

@@ -1,16 +1,10 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, LSTM
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 import matplotlib.pyplot as plt
@@ -94,21 +88,33 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape, x_test.shape) # (1095, 75) (365, 75)
+print(y_train.shape, y_test.shape) # (1095,) (365,)
+x_train = x_train.reshape(1095, 75, 1)
+x_test = x_test.reshape(365, 75, 1)
+print(x_train.shape, x_test.shape) # (1095, 75, 1) (365, 75, 1)
+
 
 #2. 모델구성
 model = Sequential()
-model.add(Dense(24, activation='linear', input_dim=75))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(1, activation='linear'))
+model.add(LSTM(64, input_shape=(75,1), activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(1))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mae', optimizer='adam',
               metrics=['accuracy'])
 from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+earlyStopping = EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
                               restore_best_weights=True) 
-hist = model.fit(x_train, y_train, epochs=1000, batch_size=100, 
+hist = model.fit(x_train, y_train, epochs=500, batch_size=100000, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1)
@@ -150,7 +156,10 @@ print("R2 : ", r2)
 # sample_submission.to_csv(path + 'test04.csv', index=True)
 
 
-
+# LSTM
+# loss : [163303.359375, 0.0]
+# RMSE :  183232.58885887152
+# R2 :  -5.530294328964465
 
 
 

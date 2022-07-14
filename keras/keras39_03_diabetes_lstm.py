@@ -1,15 +1,9 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 from sklearn.datasets import load_diabetes
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, LSTM
 datasets = load_diabetes()
 x = datasets.data
 y = datasets.target
@@ -39,14 +33,22 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test)) 
 # print(np.max(x_test))
 
+print(x_train.shape, x_test.shape) # (397, 10) (45, 10)
+print(y_train.shape, y_test.shape) # (397,) (45,)
+x_train = x_train.reshape(397, 10, 1)
+x_test = x_test.reshape(45, 10, 1)
+print(x_train.shape, x_test.shape) # (397, 10, 1) (45, 10, 1)
+
+
 #2. 모델구성
 model = Sequential()
-model.add(Dense(5, input_dim=10))
-model.add(Dense(7))
-model.add(Dense(10))
-model.add(Dense(15))
-model.add(Dense(12))
+model.add(LSTM(64, input_shape=(10,1), activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
 model.add(Dense(1))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam')
@@ -74,6 +76,12 @@ from sklearn.metrics import r2_score
 r2 = r2_score(y_test, y_predict)
 print('r2 스코어 : ', r2)
 
+# LSTM
+# loss :  2362.000732421875
+# r2 스코어 :  0.5913179199964252
+
+
+
 #=============================================================================
 # loss :  1947.0958251953125
 # r2 스코어 :  0.6631062815922577
@@ -95,16 +103,7 @@ print('r2 스코어 : ', r2)
 # r2 스코어 :  0.6535519247385906
 
 
-'''
-print('------------------------------')
-print(hist) # <tensorflow.python.keras.callbacks.History object at 0x00000219A7310F40>
-print('------------------------------')
-print(hist.history) 
-print('------------------------------')
-print(hist.history['loss']) #키밸류 상의 loss는 이름이기 때문에 ''를 넣어줌
-print('------------------------------')
-print(hist.history['val_loss']) #키밸류 상의 val_loss는 이름이기 때문에 ''를 넣어줌
-'''
+
 '''
 # print("걸린시간 : ", end_time)
 
@@ -122,23 +121,4 @@ print('r2 스코어 : ', r2)
 # loss :  1998.3214111328125
 # r2 스코어 :  0.6542430748632183
 
-
-
-# 이 값을 이용해 그래프를 그려보자!
-
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.rcParams['font.family']='Malgun Gothic'
-matplotlib.rcParams['axes.unicode_minus']=False
-
-plt.figure(figsize=(9,6))
-plt.plot(hist.history['loss'], marker='', c='red', label='loss') # 연속된 데이터는 엑스 빼고 와이만 써주면 됨. 순차적으로 진행.
-plt.plot(hist.history['val_loss'], marker='', c='blue', label='val_loss')
-plt.grid() # 모눈종이 형태로 볼 수 있도록 함
-plt.title('이결바보')
-plt.ylabel('loss')
-plt.xlabel('epochs')
-# plt.legend(loc='upper right') # 라벨값이 원하는 위치에 명시됨
-plt.legend()
-plt.show()
 '''

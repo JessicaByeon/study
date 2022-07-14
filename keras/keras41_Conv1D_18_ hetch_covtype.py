@@ -11,7 +11,7 @@ import tensorflow as tf
 from sklearn.datasets import fetch_covtype
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
 import pandas as pd
 
 import tensorflow as tf

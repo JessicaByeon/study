@@ -1,9 +1,3 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
@@ -11,7 +5,7 @@ import tensorflow as tf
 from sklearn.datasets import fetch_covtype
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, LSTM
 import pandas as pd
 
 import tensorflow as tf
@@ -56,18 +50,22 @@ x_test = scaler.transform(x_test)
 # # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape, x_test.shape) # (464809, 54) (116203, 54)
+print(y_train.shape, y_test.shape) # (464809, 7) (116203, 7)
+x_train = x_train.reshape(464809, 54, 1)
+x_test = x_test.reshape(116203, 54, 1)
+print(x_train.shape, x_test.shape) # (464809, 54, 1) (116203, 54, 1)
+
+
 #2. 모델구성
 model = Sequential()
-model.add(Dense(500, activation='linear', input_dim=54))
-model.add(Dense(400, activation='sigmoid'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(400, activation='linear'))
+model.add(LSTM(64, input_shape=(54,1), activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
 model.add(Dense(7, activation='sigmoid'))
+model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam',
@@ -79,7 +77,7 @@ earlyStopping = EarlyStopping(monitor='val_loss', patience=50, mode='min', verbo
 
 import time
 start_time = time.time() # 현재 시간 출력
-hist = model.fit(x_train, y_train, epochs=10, batch_size=100, 
+hist = model.fit(x_train, y_train, epochs=10, batch_size=1000, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1)
@@ -102,6 +100,7 @@ print(aaa, '걸린시간 : ', end_time)
 # gpu 걸린시간 :  210.9643955230713
 
 '''
+'''
 # print("============= y_test[:5] ==============")
 # print(y_test[:5])
 # print("============= y_pred ==============")
@@ -120,13 +119,18 @@ acc = accuracy_score(y_test, y_predict)
 print('acc 스코어 : ', acc)
 
 
+# LSTM
+# loss :  0.8565064072608948
+# accuracy :  0.6082373261451721
+# gpu 걸린시간 :  1443.2322998046875
+
+
 # loss :  0.6646304726600647
 # accuracy :  0.7235957980155945
 # ============= y_pred ==============
 # tf.Tensor([1 1 0 ... 2 1 1], shape=(116203,), dtype=int64)
 # tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)       
 # acc 스코어 :  0.7235957763568927
-'''
 
 
 

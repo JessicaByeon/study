@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
 
 import tensorflow as tf
 tf.random.set_seed(66)

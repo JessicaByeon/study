@@ -9,7 +9,7 @@ from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 from sklearn.datasets import load_breast_cancer
 from tensorflow.python.keras.models import Sequential 
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
 from sklearn.model_selection import train_test_split
 
 #1. 데이터

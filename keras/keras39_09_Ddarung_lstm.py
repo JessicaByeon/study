@@ -1,15 +1,9 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense, LSTM
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 
@@ -77,12 +71,22 @@ x_test = scaler.transform(x_test)
 # print(np.max(x_test))
 
 
+print(x_train.shape, x_test.shape) # (1429, 9) (30, 9)
+print(y_train.shape, y_test.shape) # (1429,) (30,)
+x_train = x_train.reshape(1429, 9, 1)
+x_test = x_test.reshape(30, 9, 1)
+print(x_train.shape, x_test.shape) # (1429, 9, 1) (30, 9, 1)
+
+
 #2. 모델구성
 model = Sequential()
-model.add(Dense(100, activation='linear', input_dim=9))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(1, activation='linear'))
+model.add(LSTM(64, input_shape=(9,1), activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu'))
+model.add(Dense(1))
+model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mae', optimizer='adam',
@@ -91,7 +95,7 @@ from tensorflow.python.keras.callbacks import EarlyStopping
 earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
                              restore_best_weights=True) 
 
-hist = model.fit(x_train, y_train, epochs=530, batch_size=100, 
+hist = model.fit(x_train, y_train, epochs=500, batch_size=1000, 
                  validation_split=0.2,
                  callbacks=[earlyStopping],
                  verbose=1)
@@ -123,6 +127,18 @@ print("R2 : ", r2)
 # submission['count'] = y_summit
 # submission = submission.fillna(submission.mean())
 # submission.to_csv('test5.csv', index=True)
+
+
+# LSTM
+# loss : [28.414831161499023, 0.0]
+# RMSE :  34.51787940902206
+# R2 :  0.656082342819579
+
+
+
+
+
+
 
 # loss : 16.401729583740234
 # RMSE :  19.031272227452
