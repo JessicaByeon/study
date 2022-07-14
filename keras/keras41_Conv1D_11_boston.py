@@ -1,154 +1,99 @@
-# 기존 DNN 모델과 Conv1D 사용 시 성능비교 (11번~22번)
-
 from sklearn.datasets import load_boston
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
-import numpy as np
 from sqlalchemy import false
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, Dropout
+from tensorflow.python.keras.models import Sequential, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
+import numpy as np
 
+#1. 데이터
 datasets = load_boston()
-x = datasets.data
-y = datasets['target']
+x, y = datasets.data, datasets.target # 한번에 이렇게 쓸 수 있음!
 
-# print(np.min(x)) # 0.0
-# print(np.max(x)) # 711.0 --- 711을 최대값인 1로 잡고 계산
-# x = (x - np.min(x)) / (np.max(x) - np.min(x))
-# print(x[:10])
+print(x) #8가지 feature
+print(y) #보스턴 집값
+print(x.shape, y.shape)    #(506, 13) (506,) 데이터 갯수 506, 컬럼 13 / 506개의 스칼라(데이터), 1개의 벡터
 
-x_train, x_test, y_train, y_test = train_test_split(
-    x, y, train_size=0.7, random_state=66
-)
+print(datasets.feature_names) #사이킷런에서 제공하는 예제 데이터만 가능
+ #['CRIM' 'ZN' 'INDUS' 'CHAS' 'NOX' 'RM' 'AGE' 'DIS' 'RAD' 'TAX' 'PTRATIO' 'B'(흑인) 'LSTAT']
+print(datasets.DESCR)
+
+x_train, x_test, y_train, y_test = train_test_split(x, y,
+        train_size=0.8, shuffle=True, random_state=66)
 
 scaler = MinMaxScaler()
 # scaler = StandardScaler()
 # scaler = MaxAbsScaler()
 # scaler = RobustScaler()
-# scaler.fit(x_train)
-# x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
 x_train = scaler.fit_transform(x_train) # 위 2줄을 이 한줄로 표현가능 fit.transform
 x_test = scaler.transform(x_test) # x_train은 fit, transform 모두 실행, x_test는 transform만! fix X!
-# print(np.min(x_train)) # 0.0
-# print(np.max(x_train)) # 1.0000000000000002
-# print(np.min(x_test)) # -0.06141956477526944
-# print(np.max(x_test)) # 1.1478180091225068
+
+print(x_train.shape) # (404, 13)
+print(x_test.shape) # (102, 13)
+
+x_train = x_train.reshape(404, 13, 1)
+x_test = x_test.reshape(102, 13, 1)
+print(np.unique(y_train, return_counts=True))
+
 
 #2. 모델구성
 model = Sequential()
-model.add(Dense(5, input_dim=13))
-model.add(Dense(9))
-model.add(Dense(10))
-model.add(Dense(10))
-model.add(Dense(1))
-
-
-model = Sequential()
-model.add(Conv1D(filters=64, kernel_size=(3,3), # 64 다음 레이어로 전달해주는 아웃풋 노드의 갯수, kernel size 이미지를 자르는 규격
-                 padding='same', # 원래 shape를 그대로 유지하여 다음 레이어로 보내주고 싶을 때 주로 사용!
-                 input_shape=(13, 1, 1))) # (batch_size, rows, columns, channels) / 출력 (N, 13, 1, 64)
-model.add(Conv1D(32, (2,2), 
-                 padding='same',
-                 activation='relu')) # filter = 32, kernel size = (2,2) / 출력 (N, 13, 1, 32)
-model.add(Flatten()) # (N, 416)
+model.add(Conv1D(64, 2, input_shape=(13, 1)))
+model.add(Flatten())
 model.add(Dense(32, activation='relu'))
-# model.add(Dropout(0.3)) # 30% 만큼 제외
-model.add(Dense(32, activation='relu'))
-# model.add(Dropout(0.2)) # 20% 만큼 제외
-model.add(Dense(16, activation='relu'))
 model.add(Dense(1))
-model.summary()
+# model.summary()
 
 
-
-#3. 컴파일, 훈련
+# import time
+# 3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam')
 
-# start_time = time.time() #현재 시간 출력 1656032967.2581124
-# print(start_time) #1656032967.2581124
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+earlyStopping =EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+                             restore_best_weights=True) 
 
-hist = model.fit(x_train, y_train, epochs=500, batch_size=20, 
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath='./_ModelCheckPoint/keras24_ModelCheckPoint.hdf5' # 가장 낮은 지점이 이 경로에 저장, 낮은 값이 나올 때마다 계속적으로 갱신하여 저장
+#                       )
+
+# start_time = time.time()
+hist = model.fit(x_train, y_train, epochs=1000, batch_size=20, 
                 validation_split=0.2,
-                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
+                callbacks=[earlyStopping], # 최저값을 체크해 반환해줌
+                verbose=1)
+# end_time = time.time()
 
-# end_time = time.time() - start_time #걸린 시간
 
-
-#4. 평가, 예측
+# 4. 평가, 예측
 loss = model.evaluate(x_test, y_test)
 print('loss : ', loss)
 
 y_predict = model.predict(x_test)
-
 from sklearn.metrics import r2_score
 r2 = r2_score(y_test, y_predict)
 print('r2 스코어 : ', r2)
 
-#=============================================================================
-# loss :  21.426353454589844
-# r2 스코어 :  0.7406547626963109
-#=============================================================================
-# MinMaxScaler
-# loss :  17.020431518554688
-# r2 스코어 :  0.793984149564475
-#=============================================================================
-# StandardScaler
-# loss :  16.821285247802734
-# r2 스코어 :  0.7963946205369385
-#=============================================================================
-# MaxAbsScaler
-# loss :  17.01386070251465
-# r2 스코어 :  0.7940637072715339
-#=============================================================================
-# RobustScaler
-# loss :  17.2054500579834
-# r2 스코어 :  0.7917446902703928
 
-# 스케일링을 했을 때 더 결과값이 좋음. 
-# 해당 모델에서는 StandardScaler가 가장 좋은 결과값을 가짐.
+# 최저값이 개선되면 다음과 같은 메시지, Epoch 00123: val_loss improved from 19.88012 to 19.75124, saving model to ./_ModelCheckPoint\keras24_ModelCheckPoint.hdf5
+# 최저값이 개선되지 않으면 다음과 같은 메시지, Epoch 00134: val_loss did not improve from 19.53281
+# Epoch 00134: early stopping
+# 4/4 [==============================] - 0s 332us/step - loss: 9.1255
+# loss :  9.125495910644531
+# r2 스코어 :  0.8908210680543753
 
 
-'''
-print('------------------------------')
-print(hist) # <tensorflow.python.keras.callbacks.History object at 0x00000219A7310F40>
-print('------------------------------')
-print(hist.history) 
-print('------------------------------')
-print(hist.history['loss']) #키밸류 상의 loss는 이름이기 때문에 ''를 넣어줌
-print('------------------------------')
-print(hist.history['val_loss']) #키밸류 상의 val_loss는 이름이기 때문에 ''를 넣어줌
-
-# print("걸린시간 : ", end_time)
+# dropout 사용 결과값
+# loss :  12.311768531799316
+# r2 스코어 :  0.8526999674290076
 
 
-# 이 값을 이용해 그래프를 그려보자!
+# cnn ==============================================================================
+# loss :  16.270313262939453
+# r2 스코어 :  0.8053392957895077
 
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.rcParams['font.family']='Malgun Gothic'
-matplotlib.rcParams['axes.unicode_minus']=False
-
-plt.figure(figsize=(9,6))
-plt.plot(hist.history['loss'], marker='.', c='red', label='loss') # 연속된 데이터는 엑스 빼고 와이만 써주면 됨. 순차적으로 진행.
-plt.plot(hist.history['val_loss'], marker='.', c='blue', label='val_loss')
-plt.grid() # 모눈종이 형태로 볼 수 있도록 함
-plt.title('이결바보')
-plt.ylabel('loss')
-plt.xlabel('epochs')
-# plt.legend(loc='upper right') # 라벨값이 원하는 위치에 명시됨
-plt.legend()
-plt.show()
-'''
-
-
-# {'loss': [1521.7059326171875, 130.54188537597656, 91.58596801757812, 82.65372467041016, 
-# 72.5574951171875, 70.0708236694336, 66.46566009521484, 70.04518127441406, 63.4539794921875, 63.71456527709961, 61.172828674316406], 'val_loss': [158.5045623779297, 101.32865905761719, 85.67953491210938, 82.06331634521484, 70.68658447265625, 87.28343200683594, 101.1255874633789, 73.15115356445312, 63.8593635559082, 113.73959350585938, 72.89293670654297]}
-# 딕셔너리{} 키밸류 형태로 loss와 val_loss를 반환해줌
-
-# val 없이 반환하면 로스만 반환
-# val 적용하여 반환하면 로스, val_loss 두가지 반환
-
-# 히스토리 안에 반환값 - loss. val_loss
-# 로스에서 최저값을 찾을 수 있음, 그 지점이 최적의 Weight
-
+# Conv1D
+# loss :  11.774297714233398
+# r2 스코어 :  0.8591303687717701

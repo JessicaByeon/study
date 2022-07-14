@@ -1,16 +1,10 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 import matplotlib.pyplot as plt
@@ -70,22 +64,13 @@ y = train_set['SalePrice']
 print(y)
 print(y.shape) # (1460, )
 
-
-# [과제]
-# # activation : sigmoid, relu, linear
-# metrics 추가
-# EarlyStopping 넣고
-# 성능비교
-# 느낀점 2줄 이상
-
-
 x_train, x_test, y_train, y_test = train_test_split(x, y,
         train_size=0.75, shuffle=True, random_state=68)
 
 # scaler = MinMaxScaler()
-# scaler = StandardScaler()
+scaler = StandardScaler()
 # scaler = MaxAbsScaler()
-scaler = RobustScaler()
+# scaler = RobustScaler()
 scaler.fit(x_train)
 x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
 x_test = scaler.transform(x_test) 
@@ -94,24 +79,52 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape) # (1095, 75)
+print(x_test.shape) # (365, 75)
+
+x_train = x_train.reshape(1095, 75, 1)
+x_test = x_test.reshape(365, 75, 1)
+
+print(np.unique(y_train, return_counts=True))
+
 
 #2. 모델구성
 model = Sequential()
-model.add(Dense(24, activation='linear', input_dim=75))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(1, activation='linear'))
+model.add(Conv1D(64, 2, input_shape=(75, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
+model.add(Dense(1))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mae', optimizer='adam',
               metrics=['accuracy'])
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
-                              restore_best_weights=True) 
-hist = model.fit(x_train, y_train, epochs=1000, batch_size=100, 
+
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
+
+#  # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+
+earlyStopping =EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
+hist = model.fit(x_train, y_train, epochs=100, batch_size=100, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
-                verbose=1)
+                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
+
 
 #4. 평가 예측
 loss = model.evaluate(x_test, y_test)
@@ -128,66 +141,22 @@ print("RMSE : ", rmse)
 r2 = r2_score(y_test, y_predict)
 print("R2 : ", r2)
 
-# y_summit = model.predict(test_set)
+# loss : [59512.2265625, 0.0]
+# RMSE :  78627.20978172288
+# R2 :  -0.2024666745327537
 
-# plt.plot(history.history['loss'])
-# plt.plot(history.history['val_loss'])
-# plt.title('Model accuracy')
-# plt.xlabel('Epoch')
-# plt.ylabel('loss')
-# plt.legend(['train_set', 'test_set'], loc='upper left')
-# plt.show()
+# dropout 사용 결과값
+# loss : [59380.1328125, 0.0]
+# RMSE :  77699.9638862343
+# R2 :  -0.17427267318399742
 
-# print(y_summit)
-# print(y_summit.shape) # (715, 1)
+# cnn ==============================================================================
+# StandardScale
+# loss : [21606.76953125, 0.0]
+# RMSE :  30207.218011557576
+# R2 :  0.8225202613674032
 
-
-# .to_csv()를 사용하여
-# submission.csv를 완성하시오
-
-# sample_submission['SalePrice'] = y_summit
-# sample_submission = sample_submission.fillna(sample_submission.mean())
-# sample_submission.to_csv(path + 'test04.csv', index=True)
-
-
-
-
-
-
-# 1/ validation 적용
-# loss : 15640.0517578125
-# RMSE :  24100.263701740514
-
-# 2/ EarlyStopping 및 activation 적용
-# loss : [22665.880859375, 0.0]
-# RMSE :  32121.92020250101
-
-# 손실, RMSE 모두 증가한 것으로 확인
-# 조금 더 정교한 데이터 수정이 필요할 것으로 생각됨
-
-
-
-#=============================================================================
-# loss : [22343.62890625, 0.0]
-# RMSE :  32266.976806281906
-# R2 :  0.7974912120556982
-#=============================================================================
-# MinMaxScaler
-# loss : [18434.89453125, 0.0]
-# RMSE :  27151.20760599753
-# R2 :  0.8566143724201605
-#=============================================================================
-# StandardScaler
-# loss : [16366.8154296875, 0.0]
-# RMSE :  24108.475548483566
-# R2 :  0.8869509754102445
-#=============================================================================
-# MaxAbsScaler
-# # loss : [19213.369140625, 0.0]
-# RMSE :  27788.8725431025
-# R2 :  0.8498002623191562
-#=============================================================================
-# RobustScaler
-# loss : [20941.740234375, 0.0]
-# RMSE :  28724.662617243022
-# R2 :  0.8395139849715223
+# Conv1D
+# loss : [34632.21875, 0.0]
+# RMSE :  50661.496708863735
+# R2 :  0.500789912163679

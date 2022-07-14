@@ -25,9 +25,9 @@ print(x_test.shape, y_test.shape)   # (10000, 28, 28) (10000,)
 # x_train = scaler.transform(x_train)
 # x_test = scaler.transform(x_test)
 
-x_train = x_train.reshape(60000, 28, 28, 1)
-x_test = x_test.reshape(10000, 28, 28, 1)
-print(x_train.shape) # (60000, 28, 28, 1)
+# x_train = x_train.reshape(60000, 28, 28, 1)
+# x_test = x_test.reshape(10000, 28, 28, 1)
+# print(x_train.shape) # (60000, 28, 28, 1)
 
 print(np.unique(y_train, return_counts=True))
 # (array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=uint8), 
@@ -43,20 +43,13 @@ y_test = pd.get_dummies(y_test)
 
 #2. 모델구성
 model = Sequential()
-model.add(Conv2D(filters=64, kernel_size=(3,3), # 64 다음 레이어로 전달해주는 아웃풋 노드의 갯수, kernel size 이미지를 자르는 규격
-                 padding='same', # 원래 shape를 그대로 유지하여 다음 레이어로 보내주고 싶을 때 주로 사용!
-                 input_shape=(28, 28, 1))) # (batch_size, rows, columns, channels)   # 출력 : (N, 28, 28, 64)
-model.add(MaxPooling2D()) # (N, 14, 14, 64)
-model.add(Conv2D(32, (2,2), 
-                 padding='valid', # 디폴트
-                 activation='relu')) # filter = 32, kernel size = (2,2) # 출력 : (N, 13, 13, 32)
-
-model.add(Flatten()) # (N, 175) 5*5*7
+model.add(Conv1D(64, 2, padding='same', input_shape=(28, 28))) # (N, 28, 64)
+model.add(MaxPooling1D()) # (N, 14, 64)
+model.add(Conv1D(32, 2, padding='valid', activation='relu')) # (N, 13, 32)
+model.add(Flatten()) # (N, 13*32) = (N, 416)
 model.add(Dense(32, activation='relu'))
-# model.add(Dropout(0.2))
 model.add(Dense(32, activation='relu'))
-# model.add(Dropout(0.2))
-model.add(Dense(10, activation='softmax')) # 원핫의 갯수의 unit의 개수인 10와 동일하게 만들어줌
+model.add(Dense(10, activation='softmax'))
 # model.summary()
 
 
@@ -65,28 +58,28 @@ model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
-import datetime
-date = datetime.datetime.now()
-# print(date) # 2022-07-07 17:21:37.577295 수치형 데이터
-date = date.strftime("%m%d_%H%M")
-print(date) # 0707_1723 자료형 데이터(문자형)
+# import datetime
+# date = datetime.datetime.now()
+# # print(date) # 2022-07-07 17:21:37.577295 수치형 데이터
+# date = date.strftime("%m%d_%H%M")
+# print(date) # 0707_1723 자료형 데이터(문자형)
 
-# 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
-filepath = './_ModelCheckPoint/k28/'
-filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+# # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k28/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
 
 earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
                              restore_best_weights=True) 
 
-mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
-                      save_best_only=True,
-                      filepath= "".join([filepath, 'k28_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
-                      ))
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k28_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
 
 # start_time = time.time()
 hist = model.fit(x_train, y_train, epochs=10, batch_size=200, 
                 validation_split=0.2,
-                callbacks=[earlyStopping, mcp], # 최저값을 체크해 반환해줌
+                callbacks=[earlyStopping], # 최저값을 체크해 반환해줌
                 verbose=1)
 # end_time = time.time()
 
@@ -106,3 +99,8 @@ print('acc스코어 : ', acc)
 
 # loss :  [0.08913582563400269, 0.9805999994277954]
 # acc스코어 :  0.9806
+
+
+# Conv1D
+# loss :  [0.15705102682113647, 0.9589999914169312]
+# acc스코어 :  0.959

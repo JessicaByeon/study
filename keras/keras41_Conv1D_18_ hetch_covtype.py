@@ -1,31 +1,16 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import tensorflow as tf
 from sklearn.datasets import fetch_covtype
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 import pandas as pd
 
 import tensorflow as tf
 tf.random.set_seed(66)
 # 웨이트의 난수
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-print(gpus)
-if(gpus) :
-    print('쥐피유 돈다')
-    aaa = 'gpu'
-else:
-    print('쥐피유 안도라')
-    aaa = 'cpu'
 
 #1. 데이터
 datasets = fetch_covtype()
@@ -56,33 +41,51 @@ x_test = scaler.transform(x_test)
 # # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape) # (464809, 54)
+print(x_test.shape) # (116203, 64)
+
+x_train = x_train.reshape(464809, 54, 1)
+x_test = x_test.reshape(116203, 54, 1)
+print(np.unique(y_train, return_counts=True))
+
+
 #2. 모델구성
 model = Sequential()
-model.add(Dense(500, activation='linear', input_dim=54))
-model.add(Dense(400, activation='sigmoid'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(300, activation='relu'))
-model.add(Dense(400, activation='linear'))
+model.add(Conv1D(64, 2, input_shape=(54, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
 model.add(Dense(7, activation='sigmoid'))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1, 
-                              restore_best_weights=True)
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
 
-import time
-start_time = time.time() # 현재 시간 출력
+#  # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+
+earlyStopping =EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
 hist = model.fit(x_train, y_train, epochs=10, batch_size=100, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
-                verbose=1)
+                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
+
 
 #4. 평가, 예측
 # loss, acc = model.evaluate(x_test, y_test)
@@ -93,21 +96,6 @@ hist = model.fit(x_train, y_train, epochs=10, batch_size=100,
 result = model.evaluate(x_test, y_test)
 print('loss : ', result[0])
 print('accuracy : ', result[1])
-
-end_time = time.time() - start_time # 걸린 시간
-print(aaa, '걸린시간 : ', end_time)
-
-# 걸린시간 비교
-# cpu 걸린시간 :  191.34082531929016
-# gpu 걸린시간 :  210.9643955230713
-
-'''
-# print("============= y_test[:5] ==============")
-# print(y_test[:5])
-# print("============= y_pred ==============")
-# y_predict = model.predict(x_test[:5])
-# print(y_predict)
-print("============= y_pred ==============")
 
 from sklearn.metrics import accuracy_score
 y_predict = model.predict(x_test)
@@ -120,38 +108,30 @@ acc = accuracy_score(y_test, y_predict)
 print('acc 스코어 : ', acc)
 
 
-# loss :  0.6646304726600647
-# accuracy :  0.7235957980155945
-# ============= y_pred ==============
-# tf.Tensor([1 1 0 ... 2 1 1], shape=(116203,), dtype=int64)
-# tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)       
-# acc 스코어 :  0.7235957763568927
-'''
-
-
-
-#=============================================================================
-# loss :  1.019610047340393
-# accuracy :  0.5463628172874451
-# cpu 걸린시간 :  194.00481414794922
-# gpu 걸린시간 :  220.12128043174744
-#=============================================================================
-# MinMaxScaler
-# loss :  1.019610047340393
-# accuracy :  0.5463628172874451
-# cpu 걸린시간 :  202.63756585121155
-#=============================================================================
-# StandardScaler
-# loss :  1.019610047340393
-# accuracy :  0.5463628172874451
-# cpu 걸린시간 :  204.60881924629211
-#=============================================================================
-# MaxAbsScaler
-# loss :  0.2502190172672272
-# accuracy :  0.8973434567451477
-# cpu 걸린시간 :  205.43295907974243
-#=============================================================================
-# RobustScaler
 # loss :  0.19143211841583252
 # accuracy :  0.9241930246353149
-# cpu 걸린시간 :  206.75027465820312
+# tf.Tensor([1 0 1 ... 5 1 1], shape=(116203,), dtype=int64)
+# tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)
+# acc 스코어 :  0.9238315706134953
+
+# dropout 사용 결과값
+# loss :  0.3311381936073303
+# accuracy :  0.8697279691696167
+# tf.Tensor([1 0 1 ... 5 1 1], shape=(116203,), dtype=int64)
+# tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)
+# acc 스코어 :  0.8688846243212309
+
+# cnn ==============================================================================
+# RobustScaler
+# loss :  0.41117942333221436
+# accuracy :  0.8265965580940247
+# tf.Tensor([1 1 1 ... 5 1 1], shape=(116203,), dtype=int64)
+# tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)
+# acc 스코어 :  0.8243677013502233
+
+# Conv1D
+# loss :  0.4822860360145569
+# accuracy :  0.7913823127746582
+# tf.Tensor([1 1 1 ... 5 1 0], shape=(116203,), dtype=int64)
+# tf.Tensor([1 1 0 ... 5 1 1], shape=(116203,), dtype=int64)
+# acc 스코어 :  0.7913909279450616

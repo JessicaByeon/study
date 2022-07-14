@@ -1,16 +1,10 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.callbacks import EarlyStopping
 from sklearn.metrics import accuracy_score
@@ -94,10 +88,10 @@ gender_submission = pd.read_csv(path + 'gender_submission.csv', #예측에서 �
 x_train, x_test, y_train, y_test = train_test_split(x,y, 
                                                     train_size=0.9, shuffle=True, random_state=68)
 
-# scaler = MinMaxScaler()
+scaler = MinMaxScaler()
 # scaler = StandardScaler()
 # scaler = MaxAbsScaler()
-scaler = RobustScaler()
+# scaler = RobustScaler()
 scaler.fit(x_train)
 x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
 x_test = scaler.transform(x_test) 
@@ -106,24 +100,52 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape) # (801, 9)
+print(x_test.shape) # (90, 9)
+
+x_train = x_train.reshape(801, 9, 1)
+x_test = x_test.reshape(90, 9, 1)
+
+print(np.unique(y_train, return_counts=True))
+
 
 #2. 모델구성
 model = Sequential()
-model.add(Dense(100, activation='linear', input_dim=9))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(100, activation='relu'))
+model.add(Conv1D(64, 2, input_shape=(9, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
+# model.summary()
+
 
 #3. 컴파일, 훈련
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='loss', patience=200, mode='min', verbose=1, 
-                              restore_best_weights=True) 
 model.compile(loss='binary_crossentropy', optimizer='adam',
               metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=250, batch_size=200, 
+
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
+
+# # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+
+earlyStopping =EarlyStopping(monitor='val_loss', patience=200, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
+hist = model.fit(x_train, y_train, epochs=250, batch_size=200, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
-                verbose=1)
+                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
+
 
 #4. 평가 예측
 loss = model.evaluate(x_test, y_test)
@@ -136,43 +158,18 @@ y_predict [(y_predict >=0.5)] = 1
 # print(y_predict)
 
 acc = accuracy_score(y_test, y_predict)
-print('acc 스코어 : ', acc) 
-# acc 스코어 :  0.7623318385650224
+print('acc 스코어 : ', acc)
 
-y_summit = model.predict(test_set)
+# loss : [0.46116819977760315, 0.7444444298744202]
+# acc 스코어 :  0.7444444444444445
 
-# print(y_summit)
-# print(y_summit.shape) # (418, 1)
-
-gender_submission['Survived'] = y_summit
-submission = gender_submission.fillna(gender_submission.mean())
-submission [(submission <0.5)] = 0  
-submission [(submission >=0.5)] = 1  
-submission = submission.astype(int)
-submission.to_csv(path + 'gender_submission_test01.csv', index=True)
-
-# train_size=0.9, epochs=500, batch_size=200, 
-# loss : [0.5329717993736267, 0.8111110925674438]
-# acc 스코어 :  0.8111111111111111 / score 0.72488
-
-
-
-#=============================================================================
-# loss : [0.5881829857826233, 0.800000011920929]
-# acc 스코어 :  0.8
-#=============================================================================
-# MinMaxScaler
-# loss : [0.6370605826377869, 0.7777777910232544]
-# acc 스코어 :  0.7777777777777778
-#=============================================================================
-# StandardScaler
-# loss : [1.040970802307129, 0.7888888716697693]
+# dropout 사용 결과값
+# loss : [0.456948846578598, 0.7888888716697693]
 # acc 스코어 :  0.7888888888888889
-#=============================================================================
-# MaxAbsScaler
-# loss : [0.6537775993347168, 0.8111110925674438]
-# acc 스코어 :  0.8111111111111111
-#=============================================================================
-# RobustScaler
-# loss : [1.067983865737915, 0.7555555701255798]
-# acc 스코어 :  0.7555555555555555
+
+# cnn ==============================================================================
+# MinMaxScaler
+# loss : [0.5908742547035217, 0.8666666746139526]
+# acc 스코어 :  0.8666666666666667
+
+# Conv1D

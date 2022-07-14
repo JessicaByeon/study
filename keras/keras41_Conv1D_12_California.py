@@ -1,13 +1,7 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
@@ -23,139 +17,80 @@ print(x.shape, y.shape) #(20640, 8) (20640,)
 print(datasets.feature_names)
 print(datasets.DESCR)
 
-# [과제]
-# # activation : sigmoid, relu, linear
-# metrics 추가
-# EarlyStopping 넣고
-# 성능비교
-# 느낀점 2줄 이상
-
 x_train, x_test, y_train, y_test = train_test_split(x, y,
         train_size=0.7, shuffle=True, random_state=66)
 
-# scaler = MinMaxScaler()
+scaler = MinMaxScaler()
 # scaler = StandardScaler()
-scaler = MaxAbsScaler()
+# scaler = MaxAbsScaler()
 # scaler = RobustScaler()
-scaler.fit(x_train)
-x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
-x_test = scaler.transform(x_test) 
-# print(np.min(x_train))
-# print(np.max(x_train))
-# print(np.min(x_test)) 
-# print(np.max(x_test))
+x_train = scaler.fit_transform(x_train) # 위 2줄을 이 한줄로 표현가능 fit.transform
+x_test = scaler.transform(x_test) # x_train은 fit, transform 모두 실행, x_test는 transform만! fix X!
+
+print(x_train.shape) # (14447, 8)
+print(x_test.shape) # (6193, 8)
+
+x_train = x_train.reshape(14447, 8, 1)
+x_test = x_test.reshape(6193, 8, 1)
+print(np.unique(y_train, return_counts=True))
+
 
 #2. 모델구성
 model = Sequential()
-model.add(Dense(5, activation='linear', input_dim=8))
-model.add(Dense(9, activation='relu'))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(9, activation='linear'))
-model.add(Dense(1, activation='linear'))
+model.add(Conv1D(64, 2, input_shape=(8, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
+model.add(Dense(1))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='mse', optimizer='adam',
               metrics=['accuracy'])
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
-                             restore_best_weights=True) 
-# earlyStopping 보통 변수는 앞글자 소문자
-# 모니터 val_loss 대신 loss도 가능
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
 
-# start_time = time.time() # 현재 시간 출력
-hist = model.fit(x_train, y_train, epochs=10, batch_size=20, 
+# # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+
+earlyStopping =EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
+hist = model.fit(x_train, y_train, epochs=100, batch_size=200, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
-                verbose=1)
-# end_time = time.time() - start_time # 걸린 시간
+                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
+
 
 #4. 평가, 예측
 loss = model.evaluate(x_test, y_test)
 print('loss : ', loss)
 
-'''
-print('------------------------------')
-print(hist) # <tensorflow.python.keras.callbacks.History object at 0x00000219A7310F40>
-print('------------------------------')
-print(hist.history) 
-print('------------------------------')
-print(hist.history['loss']) #키밸류 상의 loss는 이름이기 때문에 ''를 넣어줌
-print('------------------------------')
-print(hist.history['val_loss']) #키밸류 상의 val_loss는 이름이기 때문에 ''를 넣어줌
-'''
-
-# print("걸린시간 : ", end_time)
-
-# 그래프 그리기 전에 r2
 y_predict = model.predict(x_test)
-
 from sklearn.metrics import r2_score
 r2 = r2_score(y_test, y_predict)
 print('r2 스코어 : ', r2)
-
-# [patience=10 일때]
-# loss :  0.7213335037231445
-# r2 스코어 :  0.47431188835527194
-# [patience=100 일때]
-# loss :  0.6468518972396851
-# r2 스코어 :  0.5285920019123878
+# loss :  [0.43741923570632935, 0.0033909252379089594]
 
 
-#=============================================================================
-# loss :  [1.6712443828582764, 0.0032294525299221277]
-# r2 스코어 :  -0.2179573696634438
-#=============================================================================
-# MinMaxScaler
-# loss : [0.47200360894203186, 0.0033909252379089594]
-# r2 스코어 :  0.6560166670365419
-#=============================================================================
-# StandardScaler
-# loss :  [0.46001237630844116, 0.0033909252379089594]
-# r2 스코어 :  0.6647555099350111 
-#=============================================================================
-# MaxAbsScaler
-# loss :  17.01386070251465
-# r2 스코어 :  0.7940637072715339
-#=============================================================================
-# RobustScaler
-# loss :  17.2054500579834
-# r2 스코어 :  0.7917446902703928
+# dropout 사용 결과값
+# loss :  [0.7747023105621338, 0.0033909252379089594]
 
+# cnn ==============================================================================
+# MinMaxScale
+# loss :  [0.4570671617984772, 0.0033909252379089594]    
+# r2 스코어 :  0.6669019412529609
 
-'''
-# 이 값을 이용해 그래프를 그려보자!
-
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.rcParams['font.family']='Malgun Gothic'
-matplotlib.rcParams['axes.unicode_minus']=False
-
-plt.figure(figsize=(9,6))
-plt.plot(hist.history['loss'], marker='.', c='red', label='loss') # 연속된 데이터는 엑스 빼고 와이만 써주면 됨. 순차적으로 진행.
-plt.plot(hist.history['val_loss'], marker='.', c='blue', label='val_loss')
-plt.grid() # 모눈종이 형태로 볼 수 있도록 함
-plt.title('이결바보')
-plt.ylabel('loss')
-plt.xlabel('epochs')
-# plt.legend(loc='upper right') # 라벨값이 원하는 위치에 명시됨
-plt.legend()
-plt.show()
-'''
-
-
-
-# 1/ validation 적용
-# loss :  0.6926966309547424
-# r2 스코어 :  0.5031103996989461
-
-# 2/ EarlyStopping 적용
-# loss :  0.6468518972396851
-# r2 스코어 :  0.5285920019123878
-
-# 3/ activation 적용
-# loss :  [0.5073163509368896, 0.0033909252379089594]
-# r2 스코어 :  0.630281735559099
-
-# 1/,2/,3/을 거치며 점점 손실도 줄고 r2 스코어도 증가하는 것을 발견!
-# 최적화가 이루어진 것으로 보인다.
-
+# Conv1D
+# loss :  [0.49357274174690247, 0.0033909252379089594]
+# r2 스코어 :  0.6402976464052673

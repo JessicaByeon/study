@@ -1,15 +1,9 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 from sklearn.datasets import load_breast_cancer
-from tensorflow.python.keras.models import Sequential 
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 from sklearn.model_selection import train_test_split
 
 #1. 데이터
@@ -30,8 +24,8 @@ x_train, x_test, y_train, y_test = train_test_split(x, y,
 
 # scaler = MinMaxScaler()
 # scaler = StandardScaler()
-scaler = MaxAbsScaler()
-# scaler = RobustScaler()
+# scaler = MaxAbsScaler()
+scaler = RobustScaler()
 scaler.fit(x_train)
 x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
 x_test = scaler.transform(x_test) 
@@ -40,34 +34,51 @@ x_test = scaler.transform(x_test)
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape) # (512, 30)
+print(x_test.shape) # (57, 10)
+
+x_train = x_train.reshape(512, 30, 1)
+x_test = x_test.reshape(57, 30, 1)
+print(np.unique(y_train, return_counts=True))
+
 
 #2. 모델구성
+
 model = Sequential()
-model.add(Dense(5, activation='linear', input_dim=30))
-model.add(Dense(10, activation='sigmoid'))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='linear'))
-model.add(Dense(1, activation='sigmoid'))
+model.add(Conv1D(64, 2, input_shape=(30, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
+model.add(Dense(1))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='binary_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='loss', patience=30, mode='min', verbose=1, 
-                              restore_best_weights=True) 
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
 
-# loss :  0.0955263003706932
+#  # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
 
-# earlyStopping 보통 변수는 앞글자 소문자
-# 모니터 val_loss 대신 loss도 가능
+earlyStopping =EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+                             restore_best_weights=True) 
 
-# start_time = time.time() # 현재 시간 출력
-hist = model.fit(x_train, y_train, epochs=250, batch_size=20, 
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
+hist = model.fit(x_train, y_train, epochs=100, batch_size=20, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
-# end_time = time.time() - start_time # 걸린 시간
 
 
 #4. 평가, 예측
@@ -101,44 +112,21 @@ from sklearn.metrics import r2_score, accuracy_score
 # # r2 스코어 :  0.5852116219896948
 
 acc = accuracy_score(y_test, y_predict)
-print('acc 스코어 : ', acc) #acc 스코어 :  0.8947368421052632
-print(y_predict)
+print('acc 스코어 : ', acc)
+# print(y_predict)
 
-'''
-# 이 값을 이용해 그래프를 그려보자!
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.rcParams['font.family']='Malgun Gothic'
-matplotlib.rcParams['axes.unicode_minus']=False
-
-plt.figure(figsize=(9,6))
-plt.plot(hist.history['loss'], marker='.', c='red', label='loss') # 연속된 데이터는 엑스 빼고 와이만 써주면 됨. 순차적으로 진행.
-plt.plot(hist.history['val_loss'], marker='.', c='blue', label='val_loss')
-plt.grid() # 모눈종이 형태로 볼 수 있도록 함
-plt.title('breast cancer')
-plt.ylabel('loss')
-plt.xlabel('epochs')
-# plt.legend(loc='upper right') # 라벨값이 원하는 위치에 명시됨
-plt.legend()
-plt.show()
-'''
-
-#=============================================================================
-# loss :  [0.14863468706607819, 0.9473684430122375]
-# acc 스코어 :  0.9473684210526315
-#=============================================================================
-# MinMaxScaler
-# loss :  [0.0234573595225811, 1.0]
-# acc 스코어 :  1.0
-#=============================================================================
-# StandardScaler
-# loss :  [0.004326709546148777, 1.0]
-# acc 스코어 :  1.0
-#=============================================================================
-# MaxAbsScaler
-# loss :  [0.04236394539475441, 0.9824561476707458]
+# loss :  [0.04178836569190025, 0.9824561476707458]
 # acc 스코어 :  0.9824561403508771
-#=============================================================================
+
+# dropout 사용 결과값
+# loss :  [0.06418189406394958, 0.9824561476707458]
+# acc 스코어 :  0.9824561403508771
+
+# cnn ==============================================================================
 # RobustScaler
-# loss :  [0.0034537871833890676, 1.0]
-# acc 스코어 :  1.0
+# loss :  [0.06440339237451553, 0.9824561476707458]
+# acc 스코어 :  0.9824561403508771
+
+# Conv1D
+# loss :  [0.034887541085481644, 0.9824561476707458]
+# acc 스코어 :  0.9824561403508771

@@ -1,16 +1,10 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 
 import tensorflow as tf
 tf.random.set_seed(66)
@@ -36,37 +30,61 @@ x_train, x_test, y_train, y_test = train_test_split(x, y,
         train_size=0.8, shuffle=True, random_state=68)
 
 # scaler = MinMaxScaler()
-# scaler = StandardScaler()
+scaler = StandardScaler()
 # scaler = MaxAbsScaler()
 # scaler = RobustScaler()
-# scaler.fit(x_train)
-# x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
-# x_test = scaler.transform(x_test) 
+scaler.fit(x_train)
+x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
+x_test = scaler.transform(x_test) 
 # print(np.min(x_train))
 # print(np.max(x_train))
 # print(np.min(x_test))
 # print(np.max(x_test))
 
+print(x_train.shape) # (1437, 64)
+print(x_test.shape) # (360, 64)
+
+x_train = x_train.reshape(1437, 64, 1)
+x_test = x_test.reshape(360, 64, 1)
+print(np.unique(y_train, return_counts=True))
+
+
 #2. 모델구성
 model = Sequential()
-model.add(Dense(5, activation='linear', input_dim=64))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='linear'))
+model.add(Conv1D(64, 2, input_shape=(64, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
 model.add(Dense(10, activation='softmax'))
+# model.summary()
+
 
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1, 
-                              restore_best_weights=True)
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
 
-hist = model.fit(x_train, y_train, epochs=500, batch_size=100, 
+#  # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+
+earlyStopping =EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
+hist = model.fit(x_train, y_train, epochs=100, batch_size=100, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
-                verbose=1)
+                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
 
 #4. 평가, 예측
 # loss, acc = model.evaluate(x_test, y_test)
@@ -95,38 +113,21 @@ print(y_test)
 acc = accuracy_score(y_test, y_predict)
 print('acc 스코어 : ', acc)
 
-'''
-import matplotlib.pyplot as plt
-plt.gray()
-plt.matshow(datasets.image[2])
-plot.show()
-'''
 
-# loss :  0.4753378927707672
-# accuracy :  0.8888888955116272
+# loss :  0.39301151037216187
+# accuracy :  0c
 
+# dropout 사용 결과값
+# loss :  0.8342002034187317
+# accuracy :  0.7194444537162781
 
-#=============================================================================
-# loss :  0.3976026773452759
-# accuracy :  0.9083333611488342
-# acc 스코어 :  0.9083333333333333
-#=============================================================================
-# MinMaxScaler
-# loss :  0.39715245366096497
-# accuracy :  0.9027777910232544
-# acc 스코어 :  0.9027777777777778
-#=============================================================================
-# StandardScaler
-# loss :  0.3944777250289917
-# accuracy :  0.8888888955116272
-# acc 스코어 :  0.8888888888888888
-#=============================================================================
-# MaxAbsScaler
-# loss :  0.39715245366096497
-# accuracy :  0.9027777910232544
-# acc 스코어 :  0.9027777777777778
-#=============================================================================
-# RobustScaler
-# loss :  0.5001651644706726
-# accuracy :  0.8416666388511658
-# acc 스코어 :  0.8416666666666667
+# cnn ==============================================================================
+# StandardScale
+# loss :  0.16256806254386902
+# accuracy :  0.9750000238418579
+# acc 스코어 :  0.975
+
+# Conv1D
+# loss :  0.13570623099803925
+# accuracy :  0.9750000238418579
+# acc 스코어 :  0.975

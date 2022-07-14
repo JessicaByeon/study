@@ -1,16 +1,10 @@
-# 아래 모델에 대해 3가지 비교
-
-# 스케일링 하기 전
-# MinMaxScaler
-# StandardScaler
-
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.preprocessing import MaxAbsScaler, RobustScaler
 import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Conv1D, Flatten
+from tensorflow.python.keras.models import Sequential, Model, load_model
+from tensorflow.python.keras.layers import Dense, Conv1D, Flatten, MaxPooling2D, Dropout
 
 import tensorflow as tf
 tf.random.set_seed(66)
@@ -40,10 +34,10 @@ x_train, x_test, y_train, y_test = train_test_split(x, y,
 # print(y_train)
 # print(y_test)
 
-# scaler = MinMaxScaler()
+scaler = MinMaxScaler()
 # scaler = StandardScaler()
 # scaler = MaxAbsScaler()
-scaler = RobustScaler()
+# scaler = RobustScaler()
 scaler.fit(x_train)
 x_train = scaler.transform(x_train) # 수치로 변환해주는 걸 x_train에 집어넣자.
 x_test = scaler.transform(x_test) 
@@ -53,30 +47,52 @@ x_test = scaler.transform(x_test)
 # print(np.max(x_test))
 
 
+print(x_train.shape) # (120, 4)
+print(x_test.shape) # (30, 4)
+
+x_train = x_train.reshape(120, 4, 1)
+x_test = x_test.reshape(30, 4, 1)
+print(np.unique(y_train, return_counts=True))
+
+
 #2. 모델구성
+
 model = Sequential()
-model.add(Dense(5, activation='linear', input_dim=4))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='relu'))
-model.add(Dense(10, activation='linear'))
+model.add(Conv1D(64, 2, input_shape=(4, 1)))
+model.add(Flatten())
+model.add(Dense(32, activation='relu'))
 model.add(Dense(3, activation='softmax'))
-# 다중분류 최종 노드의 갯수는 y값의 갯수, 분류값에 대한 숫자
-# softmax를 거치며 y의 라벨의 값, 분류의 값이 3개이므로, Dense(3, ~
-# 확률값이므로 소수점으로 표시되며 총합이 1.0이 됨, 그중에서 가장 적합한(큰) 1가지를 출력
+# model.summary()
 
 
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
-from tensorflow.python.keras.callbacks import EarlyStopping
-earlyStopping = EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1, 
-                              restore_best_weights=True)
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+# import datetime
+# date = datetime.datetime.now()
+# # print(date)
+# date = date.strftime("%m%d_%H%M")
+# # print(date) 
 
-hist = model.fit(x_train, y_train, epochs=1000, batch_size=32, 
+#  # 파일명을 계속적으로 수정하지 않고 고정시켜주기 위해
+# filepath = './_ModelCheckPoint/k24/'
+# filename = '{epoch:04d}-{val_loss:.4f}.hdf5' # d4 네자리까지, .4f 소수넷째자리까지
+
+earlyStopping =EarlyStopping(monitor='val_loss', patience=10, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+# mcp = ModelCheckpoint(monitor='val_loss', mode='auto', verbose=1, # 가장 좋은 가중치 저장 위해 / mode가 모니터한 가장 최적 값, val 최저값, accuracy 최고값
+#                       save_best_only=True,
+#                       filepath= "".join([filepath, 'k24_', date, '_', filename] # .join안에 있는 모든 문자열을 합치겠다.
+#                       ))
+
+hist = model.fit(x_train, y_train, epochs=100, batch_size=20, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
-                verbose=1)
+                verbose=1) #verbose=0 일때는 훈련과정을 보여주지 않음
+
 
 #4. 평가, 예측
 # loss, acc = model.evaluate(x_test, y_test)
@@ -108,71 +124,29 @@ y_test = np.argmax(y_test, axis=1)
 print(y_test)
 
 acc = accuracy_score(y_test, y_predict)
-print('acc 스코어 : ', acc) #acc 스코어 :
+print('acc 스코어 : ', acc)
 
-
-
-# 1/ 이진분류 binary crossentropy 로 출력 
-# train_size=0.75, patience=10, epochs=200, validation_split=0.2
-# loss :  [-459849568.0, 0.31578946113586426] / 로스가 음수가 나왔다는 것은 지표가 잘못되었음을 의미
-# acc 스코어 :  0.3157894736842105
-
-# train_size=0.75, patience=50, epochs=500, validation_split=0.2
-# loss :  [-132279496.0, 0.31578946113586426]
-# acc 스코어 :  0.3157894736842105
-
-# 다중분류로 취급되었어야하나 이진분류 기준으로 출력되었으므로 acc 스코어가 낮을 수밖에 없음.
-# 다중분류로 취급하여 재계산 -- softmax 및 categorical crossentropy 사용
-
-# 2/ 다중분류 softmax, categorical crossentropy 로 출력
-# loss :  0.01792481169104576
+# loss :  0.2183687537908554
 # accuracy :  1.0
-# acc 스코어 :  1.0
 
-# loss :  0.068968765437603
-# accuracy :  0.9666666388511658
-# ============= y_pred ==============
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 1 2 2 2 1 0 2 1 0 2 0 2 2]
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 0 2 2]    
-# acc 스코어 :  0.9666666666666667
+# dropout 사용 결과값
+#
 
-
-#=============================================================================
-# loss :  0.09458506107330322
+# cnn ==============================================================================
+# MinMaxScaler
+# loss :  0.14082640409469604
 # accuracy :  0.9333333373069763
 # ============= y_pred ==============
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 1 2 2 2 1 0 2 1 0 2 0 2 1]
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 0 2 2]
+# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 1 2 2 2 1 0 2 1 0 2 
+# 0 2 1]
+# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 
+# 0 2 2]
 # acc 스코어 :  0.9333333333333333
-#=============================================================================
-# MinMaxScaler
-# loss :  0.10890697687864304
+
+# Conv1D
+# loss :  0.07065974920988083
 # accuracy :  0.9666666388511658
 # ============= y_pred ==============
 # [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 1 2 2 2 1 0 2 1 0 2 0 2 2]
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 0 2 2]
-# acc 스코어 :  0.9666666666666667
-#=============================================================================
-# StandardScaler
-# loss :  0.2063179910182953
-# accuracy :  0.9666666388511658
-# ============= y_pred ==============
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 1 2 2 2 1 0 2 1 0 2 0 2 2]
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 0 2 2]
-# acc 스코어 :  0.9666666666666667
-#=============================================================================
-# MaxAbsScaler
-# loss :  0.10415853559970856
-# accuracy :  0.9666666388511658
-# ============= y_pred ==============
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 1 2 2 2 1 0 2 1 0 2 0 2 2]
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 0 2 2]
-# acc 스코어 :  0.9666666666666667
-#=============================================================================
-# RobustScaler
-# loss :  0.1434842199087143
-# accuracy :  0.9666666388511658
-# ============= y_pred ==============
-# [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 1 2 1 0 2 1 0 2 0 2 2]
 # [2 0 0 1 1 1 1 0 1 0 0 0 2 2 1 1 2 2 2 2 2 1 0 2 1 0 2 0 2 2]
 # acc 스코어 :  0.9666666666666667
