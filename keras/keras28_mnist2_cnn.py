@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
 # [실습] acc 0.98 이상
-# 기준값 0.68 / 원핫인코딩(to_cat, get dummies)
+# 원핫인코딩(to_cat, get dummies)
 
 #1. 데이터
 
