@@ -20,8 +20,8 @@ data = pd.read_csv(path + 'jena_climate_2009_2016.csv',
 print(data)
 print(data.shape) # (420551, 14)
 
-
-# 데이터를 잘라주자.
+'''
+# 데이터 split
 
 def split_x(data, size):
     aaa = []
