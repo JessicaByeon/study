@@ -102,7 +102,7 @@ print(test_feature.shape, test_label.shape)
 #2. 모델구성
 model = Sequential()
 model.add(Conv1D(64, 3, padding='same',
-                 input_shape=(train_feature.shape[1], train_feature.shape[2])))
+                 input_shape=(20,13)))
 model.add(MaxPooling1D())
 model.add(LSTM(16, activation='relu'))
 model.add(Dense(16, activation='relu'))
@@ -133,3 +133,4 @@ print('loss :', loss)
 # loss : [0.07190541177988052, 1.1895273928530514e-05]
 # 훈련량 100
 # loss : [0.007612772285938263, 0.0]
+# loss : [0.00676732836291194, 0.0]
