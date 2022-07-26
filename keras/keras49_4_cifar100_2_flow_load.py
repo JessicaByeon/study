@@ -84,6 +84,8 @@ print('accuracy : ', acc[-1])
 # loss :  nan
 # accuracy :  0.019607843831181526
 
+
+
 # loss :  0.00014259724412113428
 # accuracy :  1.0
 
