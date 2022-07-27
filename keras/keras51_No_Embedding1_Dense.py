@@ -112,3 +112,4 @@ acc = model.evaluate(pad_x, labels)[1]  # [0] 넣으면 loss가 나옴
 print('acc : ', acc)
 
 # acc :  0.6785714030265808
+

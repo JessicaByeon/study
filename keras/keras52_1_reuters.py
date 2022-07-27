@@ -73,3 +73,4 @@ print('predict :', y_predict[-1])
 print('predict :', np.round(y_predict[-1],0))
 
 # loss : [3.6291472911834717, 0.21104185283184052]
+

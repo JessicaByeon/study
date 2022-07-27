@@ -93,3 +93,4 @@ print('acc :', acc)
 # print('predict :', y_predict)
 
 # acc : 0.5
+

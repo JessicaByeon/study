@@ -36,6 +36,7 @@ pad_x = pad_sequences(x, padding='pre', maxlen=5)
 # 0을 채워야하는데 앞에서부터? 뒤에서부터? 어디서부터 채워야할지?
 # LSTM 으로 연산을 하기 때문에 통상적으로 앞에 0을 채우고, 뒤의 데이터로 연산되어 수렴되도록 함
 # maxlen=5 : 최대 글자를 5글자까지만 하겠다.
+
 print(pad_x)
 print(pad_x.shape)
 # [[ 0  0  0  2  3]
@@ -111,5 +112,6 @@ model.fit(pad_x, labels, epochs=20, batch_size=16)
 #4. 평가, 예측
 acc = model.evaluate(pad_x, labels)[1]  # [0] 넣으면 loss가 나옴
 print('acc : ', acc)
+
 
 # acc :  0.9285714030265808

@@ -59,3 +59,4 @@ ohe.fit(x_new)
 
 x_new = ohe.transform(x_new).toarray()
 print(x_new.shape) # (252, 2)
+
