@@ -110,6 +110,10 @@ x_predict = ['나는 형권이가 정말 재미없다 너무 정말' ]
 token.fit_on_texts(x_predict)
 print(token.word_index)
 
+# token = Tokenizer()
+# x = token.texts_to_sequences(x_predict)
+# print(x)
+
 acc = model.evaluate(pad_x, labels)[1]  # [0] 넣으면 loss가 나옴
 print('acc : ', acc)
 
