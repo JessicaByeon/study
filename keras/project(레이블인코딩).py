@@ -30,60 +30,35 @@ pad_x1 = pad_sequences(x1, padding='pre', maxlen=13)
 print(pad_x1)
 print(pad_x1.shape) # (220, 13)
 
+
 from sklearn.preprocessing import LabelEncoder
 le = LabelEncoder()
 le = le.fit(data_set['글귀'])   # data_set['글귀']을 fit
 data_set['글귀'] = le.transform(data_set['글귀'])   # data_set['글귀']에 따라 encoding
-
 y = data_set['글귀']
 print(y)
-
-print(data_set)
-
+print(y.shape)
 
 
-# # y = data_set['글귀']
-# # y = token.texts_to_sequences(y)
-# # print(y)
+col_name = range(220)
+print(col_name)
 
-# y = data_set['글귀']
-# token = Tokenizer()
-# token.fit_on_texts(y)
-# word_index = token.word_index
+list_df = pd.DataFrame(pad_x1)
+print(list_df)
 
-# y = token.texts_to_sequences(y)
+df = pd.concat([list_df,y], axis=1)
+print(df) # (220, 14)
 
-# print(word_index)
-# print(y)
+# word_size = len(token.word_index)
+# print("word_size : ", word_size) # 257 단어사전의 갯수
+# print(np.unique(df, return_counts=True))
 
-# z = data_set['분류'] + data_set['글귀']
-# print(z)
-# print("=================================")
-# print(z.shape)
-# print("=================================")
-
-# token = Tokenizer()
-# token.fit_on_texts(z)
-# print(token.word_index)
-# # print(len(token.word_index)) # 244
-# print("=================================")
-
-# z = token.texts_to_sequences(z)
-# print(z)
-# print("=================================")
-
-
-# x = token.fit_on_texts(z['분류'])
-# # y = data_set['글귀']
-# print(x)
-# print("=================================")
-# print(y)
-
-# x = token.fit_on_texts(data_set['분류'])
-# y = data_set['글귀']
-# print(x)
-# print("=================================")
-# print(y)
+# 훈련/테스트 데이터 나누기
+from sklearn.model_selection import train_test_split
+list_df_train, list_df_test, y_train, y_test = train_test_split(
+    list_df, y, train_size=0.7, random_state=66)
+print(list_df.shape, list_df.shape) # (220, 13) (220, 13)
+print(y_train.shape, y_test.shape) # (154,) (66,)
 
 
 
@@ -115,77 +90,9 @@ print(data_set)
 
 
 
-
-'''
-from keras.preprocessing.sequence import pad_sequences
-pad_x = pad_sequences(x, padding='pre', maxlen=6) 
-print(pad_x)
-print(pad_x.shape)
-
-
-
 # 원핫인코딩
 # import numpy as np
 # import pandas as pd
 # x = pd.get_dummies(data_set, columns = ['분류'])
 
-# print(x.shape) # (978, 245)
-
-
-# 훈련/테스트 데이터 나누기
-from sklearn.model_selection import train_test_split
-x_train, x_test, y_train, y_test = train_test_split(
-    x, y, train_size=0.7, random_state=66)
-
-print(x_train.shape, x_test.shape)
-# (336264, 20, 13) (84067, 20, 13)
-
-
-
-import csv
-x = csv.reader(data_set)
-print(list(x))
-'''
-'''
-x = data_set['분류']
-y = data_set['글귀']
-token = Tokenizer()
-token.fit_on_texts(x)
-print(token.word_index)
-print(len(token.word_index)) # 256
-
-x = token.word_index
-print(x)
-
-token.fit_on_texts(y)
-print(token.word_index)
-print(len(token.word_index)) # 1883
-
-y = token.word_index
-print(y)
-
-
-x1 = token.texts_to_sequences(x)
-print(x1)
-y1 = token.texts_to_sequences(y)
-print(y1)
-
-print(x)
-
-
-
-# print(x, x.shape)
-# print(y, y.shape)
-# print(type(x), type(y))
-
-# print("분류최대길이 : ", max(len(i) for i in x)) # 38
-# print("글귀최대길이 : ", max(len(i) for i in y)) # 134
-
-
-# from keras.preprocessing.sequence import pad_sequences
-# pad_y = pad_sequences(y, padding='pre', maxlen=13) 
-# print(pad_y)
-# print(pad_y.shape)
-
-
-'''
+# print(x.shape)
