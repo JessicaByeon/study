@@ -42,7 +42,7 @@ print(pad_x1.shape) # (220, 13)
 
 
 # 예측에 사용할 x 값 (토크나이징/패딩)
-x_predict = ['동진 성진']
+x_predict = ['지금 너무 힘들고 자신감이 없어 윽']
 # token.fit_on_texts(x_predict)
 print(token.word_index)
 
