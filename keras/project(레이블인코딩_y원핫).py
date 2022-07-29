@@ -42,7 +42,7 @@ print(pad_x1.shape) # (220, 13)
 
 
 # 예측에 사용할 x 값 (토크나이징/패딩)
-x_predict = ['지금 너무 힘들고 자신감이 없어 윽']
+x_predict = ['행복하고 싶다, 지금 당장!']
 # token.fit_on_texts(x_predict)
 print(token.word_index)
 
@@ -90,7 +90,7 @@ print(y_train.shape, y_test.shape) # (154, 220) (66, 220)
 
 #################################################################
 
-#2. 모델구성
+#2. 모델구성 -- Embedding, LSTM 사용
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, LSTM, Embedding
 model = Sequential()
@@ -106,18 +106,26 @@ model.summary()
 
 #3. 컴파일, 훈련
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
-model.fit(x_train, y_train, epochs=10, batch_size=5000)
+# model.fit(x_train, y_train, epochs=100, batch_size=5000)
+
+from tensorflow.python.keras.callbacks import EarlyStopping
+earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
+                             restore_best_weights=True) 
+
+hist = model.fit(x_train, y_train, epochs=500, batch_size=5000, 
+                validation_split=0.2,
+                callbacks=[earlyStopping],
+                verbose=1)
 
 #################################################################
 
 #4. 평가, 예측
 loss = model.evaluate(x_test, y_test)
-print('loss :',loss)
+print('loss :', loss)
 
-y = le.inverse_transform([y])
-
-print('디코딩으로 얻은 원본 값: ', encoder.inverse_transform(y_predict))
-
+y_predict = model.predict(pad_x_predict1)
+y_predict = np.argmax(y_predict, axis= 1)
+print('당신에게 들려주고 싶은 이야기는', le.inverse_transform([y_predict[-1]]))
 
 
 
