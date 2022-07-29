@@ -40,6 +40,14 @@ print(y)
 
 print(data_set)
 
+y = np.array(y)
+print(type(pad_x1),type(y))
+print(pad_x1.shape, y.shape)
+y = y.reshape(-1,1)
+print(y)
+print(pad_x1.shape, y.shape)
+data = np.hstack([pad_x1,y])
+print(data)
 
 
 # # y = data_set['글귀']
