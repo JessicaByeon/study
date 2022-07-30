@@ -26,31 +26,44 @@ print(data_set.columns) # Index(['분류', '글귀'], dtype='object')
 
 # 분류 데이터 토크나이징/패딩
 x = data_set['분류']
+y = data_set['글귀']
 token = Tokenizer(oov_token="<OOV>")
-token.fit_on_texts(x)
+token.fit_on_texts(x+' '+y)
 print(token.word_index)
-# print(len(token.word_index)) # 257
+print(len(token.word_index)) # 1878
 
 x1 = token.texts_to_sequences(x)
 print(x1)
+print('==============================')
+y1 = token.texts_to_sequences(y)
+print(y1)
 
 from keras.preprocessing.sequence import pad_sequences
 pad_x1 = pad_sequences(x1, padding='pre', maxlen=13)
-
 print(pad_x1)
 print(pad_x1.shape) # (220, 13)
 
+pad_y1 = pad_sequences(y1, padding='pre', maxlen=33)
+print(pad_y1)
+print(pad_y1.shape) # (220, 33)
 
+
+# 판다스 데이터프레임화
+x = pd.DataFrame(pad_x1)
+print(x)
+y = pd.DataFrame(pad_y1)
+print(y)
+
+'''
 #################################################################
 
 #1-2. 두번째 열 '글귀' -- 글귀
 
 # 분류 데이터 토크나이징/패딩
-x = data_set['분류']
-token = Tokenizer(oov_token="<OOV>")
-token.fit_on_texts(x)
+y = data_set['글귀']
+token.fit_on_texts(y)
 print(token.word_index)
-# print(len(token.word_index)) # 257
+print(len(token.word_index)) # 257
 
 x1 = token.texts_to_sequences(x)
 print(x1)
@@ -61,18 +74,7 @@ pad_x1 = pad_sequences(x1, padding='pre', maxlen=13)
 print(pad_x1)
 print(pad_x1.shape) # (220, 13)
 
-
-# 예측에 사용할 x 값 (토크나이징/패딩)
-x_predict = ['행복하고 싶다, 지금 당장!']
-# token.fit_on_texts(x_predict)
-print(token.word_index)
-
-x_predict1 = token.texts_to_sequences(x_predict)
-print(x_predict1)
-
-from keras.preprocessing.sequence import pad_sequences
-pad_x_predict1 = pad_sequences(x_predict1, padding='pre', maxlen=13)
-print(pad_x_predict1)
+'''
 #################################################################
 
 # 훈련/테스트 데이터 나누기
@@ -80,7 +82,7 @@ from sklearn.model_selection import train_test_split
 x_train, x_test, y_train, y_test = train_test_split(
     x, y, train_size=0.7, random_state=66)
 print(x_train.shape, x_test.shape) # (154, 13) (66, 13)
-print(y_train.shape, y_test.shape) # (154, 220) (66, 220)
+print(y_train.shape, y_test.shape) # (154, 33) (66, 33)
 
 #################################################################
 
@@ -93,7 +95,7 @@ model.add(LSTM(32, activation='relu'))
 model.add(Dense(32, activation='relu'))
 model.add(Dense(32, activation='relu'))
 model.add(Dense(32, activation='relu'))
-model.add(Dense(220, activation='softmax'))
+model.add(Dense(33, activation='softmax'))
 model.summary() 
 
 #################################################################
@@ -106,7 +108,7 @@ from tensorflow.python.keras.callbacks import EarlyStopping
 earlyStopping =EarlyStopping(monitor='val_loss', patience=100, mode='min', verbose=1, 
                              restore_best_weights=True) 
 
-hist = model.fit(x_train, y_train, epochs=500, batch_size=5000, 
+hist = model.fit(x_train, y_train, epochs=10, batch_size=5000, 
                 validation_split=0.2,
                 callbacks=[earlyStopping],
                 verbose=1)
@@ -136,4 +138,4 @@ pad_x_predict1 = pad_sequences(x_predict1, padding='pre', maxlen=13)
 
 y_predict = model.predict(pad_x_predict1)
 y_predict = np.argmax(y_predict, axis= 1)
-print('당신에게 들려주고 싶은 이야기는', le.inverse_transform([y_predict[-1]]))
+print('당신에게 들려주고 싶은 이야기는', y_predict[-1])
