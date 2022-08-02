@@ -17,8 +17,8 @@ print(data_set.columns) # Index(['분류', '글귀'], dtype='object')
 # print(data_set.describe())
 
 
-# 감정분류와 글귀를 나누어 각각 처리할 예정
-# 감정분류를 x, 글귀를 y로 나누어 처리
+# 감정/상태 분류와 글귀를 나누어 각각 처리할 예정
+# 감정/상태 분류를 x, 글귀를 y로 나누어 처리
 
 #################################################################
 
@@ -40,6 +40,8 @@ pad_x1 = pad_sequences(x1, padding='pre', maxlen=13)
 print(pad_x1)
 print(pad_x1.shape) # (303, 13)
 
+x = pd.DataFrame(pad_x1)
+print(x)
 
 #################################################################
 
@@ -53,13 +55,6 @@ data_set['글귀'] = le.transform(data_set['글귀'])   # data_set['글귀']에 
 y = data_set['글귀']
 print(y)
 print(y.shape) # (303,)
-
-# 판다스 데이터프레임화
-# col_name = range(303)
-# print(col_name) # range(0, 303)
-
-x = pd.DataFrame(pad_x1)
-print(x)
 
 
 # 다중분류 -- 원핫인코딩
